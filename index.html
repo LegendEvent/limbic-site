@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Limbic — the affect runtime for AI characters</title>
+<meta name="description" content="Limbic gives AI characters a living emotional state: persistent feelings, bonds that deepen, trust that breaks, and a self-model that remembers. A deterministic affect engine injected into any LLM as natural language. Drop-in API." />
+<meta property="og:title" content="Limbic — emotions your AI characters actually keep" />
+<meta property="og:description" content="A deterministic affect runtime: functional feelings, emotion-family blends, allostatic prediction and a self-model — for any LLM." />
+<meta property="og:type" content="website" />
+<meta name="theme-color" content="#17110d" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23170f0b'/%3E%3Cpath d='M3 17h6l3-8 4 14 3-9 2 3h8' fill='none' stroke='%23e2552d' stroke-width='2.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,500&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    /* warm espresso + ember/gold — deliberately NOT the purple/pink AI cliché */
+    --bg:#17110d; --bg-2:#1d1510; --panel:#221913; --panel-2:#2a1f17;
+    --line:rgba(244,236,221,.10); --line-2:rgba(244,236,221,.20);
+    --text:#f4ecdd; --muted:#bcab90; --faint:#8c7c64;
+    --ember:#e2552d; --ember-2:#ff7a45; --gold:#e7b15a; --petrol:#3f9389; --blood:#b3331f; --clay:#c98a3a;
+    --grad:linear-gradient(100deg,#ff6a3a 0%,#e2552d 38%,#e7b15a 100%);
+    --grad-warm:linear-gradient(100deg,rgba(226,85,45,.16),rgba(231,177,90,.14));
+    --paper:#f4ecdd;
+    --radius:6px; --radius-lg:14px; --maxw:1180px;
+    --shadow:0 30px 70px -34px rgba(0,0,0,.85);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Space Grotesk',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    line-height:1.6; -webkit-font-smoothing:antialiased; overflow-x:hidden;
+  }
+  /* static warm grain + vignette — no animated blur, cheap to paint */
+  body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;
+    background:
+      radial-gradient(120vw 80vh at 80% -20%, rgba(226,85,45,.10), transparent 55%),
+      radial-gradient(90vw 70vh at -10% 10%, rgba(231,177,90,.06), transparent 55%),
+      radial-gradient(70vw 60vh at 50% 120%, rgba(63,147,137,.06), transparent 60%);
+  }
+  body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+  a{color:inherit; text-decoration:none}
+  h1,h2,h3{margin:0; letter-spacing:-.01em}
+  p{margin:0}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding:0 26px}
+  .serif{font-family:'Fraunces',Georgia,serif}
+  .ital{font-family:'Fraunces',serif; font-style:italic; font-weight:500}
+  .mono{font-family:'JetBrains Mono',monospace}
+  .ember-text{color:var(--ember)}
+  .gold-text{color:var(--gold)}
+  .muted{color:var(--muted)}
+
+  /* index marker (field-journal style) */
+  .marker{display:inline-flex; align-items:center; gap:11px; font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--ember)}
+  .marker::before{content:""; width:26px; height:1px; background:var(--ember)}
+  .marker .num{color:var(--faint)}
+
+  /* scroll progress */
+  .progress{position:fixed;top:0;left:0;height:2px;width:0;z-index:99;background:var(--ember);box-shadow:0 0 10px rgba(226,85,45,.6)}
+
+  /* buttons — squared, tactile, no glow-pill cliché */
+  .btn{position:relative; display:inline-flex; align-items:center; gap:10px; font-family:'Space Grotesk'; font-weight:600; font-size:15px; padding:14px 22px; border-radius:var(--radius); border:1px solid var(--line-2); cursor:pointer; transition:.18s transform,.18s background,.18s border-color,.18s color; white-space:nowrap; background:transparent; color:var(--text)}
+  .btn-primary{background:var(--ember); border-color:var(--ember); color:#1a0f09}
+  .btn-primary:hover{background:var(--ember-2); border-color:var(--ember-2); transform:translateY(-2px)}
+  .btn-ghost:hover{background:rgba(244,236,221,.05); border-color:var(--line-2); transform:translateY(-2px)}
+  .btn .arr{transition:.18s transform}
+  .btn:hover .arr{transform:translateX(4px)}
+
+  /* nav */
+  header.nav{position:sticky; top:0; z-index:60; background:rgba(23,17,13,.82); backdrop-filter:blur(8px); border-bottom:1px solid var(--line)}
+  .nav-inner{display:flex; align-items:center; justify-content:space-between; height:70px}
+  .logo{display:flex; align-items:center; gap:11px; font-family:'Fraunces',serif; font-weight:800; font-size:23px; letter-spacing:-.02em}
+  .logo .mark{width:32px;height:32px;border-radius:8px;background:var(--bg-2);border:1px solid var(--line-2);display:grid;place-items:center}
+  .logo .mark svg{width:22px;height:22px}
+  .nav-links{display:flex; gap:30px; align-items:center}
+  .nav-links a{font-size:14.5px; color:var(--muted); font-weight:500; transition:.15s color; position:relative}
+  .nav-links a::after{content:"";position:absolute;left:0;bottom:-5px;height:1px;width:0;background:var(--ember);transition:.2s width}
+  .nav-links a:hover{color:var(--text)} .nav-links a:hover::after{width:100%}
+  .nav-cta{display:flex; gap:11px; align-items:center}
+  @media(max-width:880px){ .nav-links{display:none} .nav-cta .btn-ghost{display:none} }
+
+  /* hero */
+  .hero{padding:64px 0 26px}
+  .hero-grid{display:grid; grid-template-columns:1.08fr .92fr; gap:46px; align-items:center}
+  @media(max-width:960px){ .hero-grid{grid-template-columns:1fr; gap:30px} }
+  .badge{display:inline-flex;align-items:center;gap:9px;padding:7px 13px;border-radius:999px;border:1px solid var(--line-2);background:rgba(244,236,221,.03);font-size:12.5px;color:var(--muted);margin-bottom:28px}
+  .badge b{color:var(--text);font-weight:600}
+  .badge .live{width:7px;height:7px;border-radius:50%;background:var(--petrol);box-shadow:0 0 9px var(--petrol);animation:blink 2.2s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+  .hero h1{font-family:'Fraunces',serif; font-weight:800; font-size:clamp(44px,6.6vw,82px); line-height:.98; letter-spacing:-.025em; max-width:15ch}
+  .hero h1 .ital{font-weight:500}
+  .hero .sub{max-width:52ch; margin:26px 0 0; font-size:clamp(16px,2vw,19px); color:var(--muted)}
+  .cta-row{display:flex; gap:13px; margin-top:32px; flex-wrap:wrap}
+  .tiny{margin-top:20px; font-size:12.5px; color:var(--faint); display:flex; gap:20px; flex-wrap:wrap; font-family:'JetBrains Mono',monospace}
+  .tiny span{display:inline-flex;align-items:center;gap:7px}
+
+  /* hero affect-trace instrument */
+  .scope{position:relative; border:1px solid var(--line); border-radius:var(--radius-lg); background:linear-gradient(180deg,rgba(34,25,19,.7),rgba(23,17,13,.5)); overflow:hidden; box-shadow:var(--shadow)}
+  .scope .scope-top{display:flex; align-items:center; justify-content:space-between; padding:13px 16px; border-bottom:1px solid var(--line); font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--faint); letter-spacing:.04em}
+  .scope .scope-top .who{color:var(--text)}
+  .scope .scope-top .rec{display:inline-flex;align-items:center;gap:7px;color:var(--ember)}
+  .scope .scope-top .rec i{width:7px;height:7px;border-radius:50%;background:var(--ember);animation:blink 1.4s infinite}
+  .scope canvas{display:block; width:100%; height:300px}
+  @media(max-width:960px){ .scope canvas{height:230px} }
+  .scope .readout{display:flex; gap:0; border-top:1px solid var(--line)}
+  .scope .readout .r{flex:1; padding:12px 14px; border-right:1px solid var(--line); font-family:'JetBrains Mono',monospace}
+  .scope .readout .r:last-child{border-right:none}
+  .scope .readout .r .k{font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint)}
+  .scope .readout .r .v{font-size:16px; color:var(--text); margin-top:3px}
+
+  /* ticker — set like a printed specimen strip */
+  .ticker{margin-top:50px; border-top:1px solid var(--line); border-bottom:1px solid var(--line)}
+  .ticker .wrap2{display:flex; align-items:center; gap:0; overflow:hidden; -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent); mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+  .ticker .lbl{flex:0 0 auto; padding:16px 22px 16px 0; font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--faint); border-right:1px solid var(--line)}
+  .ticker .track{display:flex; gap:46px; width:max-content; animation:slide 30s linear infinite; padding-left:46px}
+  .ticker:hover .track{animation-play-state:paused}
+  @keyframes slide{to{transform:translateX(-50%)}}
+  .ticker .item{font-family:'Fraunces',serif; font-weight:600; font-size:17px; color:var(--muted); white-space:nowrap; padding:16px 0}
+
+  section{padding:104px 0; position:relative}
+  .sec-head{max-width:none; margin:0 0 54px}
+  .sec-head.center{text-align:center; max-width:62ch; margin-inline:auto}
+  .sec-head h2{font-family:'Fraunces',serif; font-weight:800; font-size:clamp(32px,4.6vw,52px); line-height:1.02; letter-spacing:-.025em; margin-top:18px}
+  .sec-head p{color:var(--muted); margin-top:18px; font-size:17.5px; max-width:60ch}
+  .sec-head.center p{margin-inline:auto}
+
+  .reveal{opacity:0; transform:translateY(22px); transition:opacity .65s cubic-bezier(.2,.7,.2,1), transform .65s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1; transform:none}
+  .d1{transition-delay:.07s}.d2{transition-delay:.14s}.d3{transition-delay:.21s}
+
+  /* problem/solution */
+  .ps-grid{display:grid; grid-template-columns:1fr 1fr; gap:0; border:1px solid var(--line); border-radius:var(--radius-lg); overflow:hidden}
+  @media(max-width:820px){ .ps-grid{grid-template-columns:1fr} }
+  .ps-card{padding:36px}
+  .ps-card.bad{background:rgba(179,51,31,.05); border-right:1px solid var(--line)}
+  @media(max-width:820px){ .ps-card.bad{border-right:none; border-bottom:1px solid var(--line)} }
+  .ps-card.good{background:linear-gradient(180deg,rgba(226,85,45,.10),transparent)}
+  .ps-card h3{font-family:'Fraunces',serif; font-size:23px; margin-bottom:16px; display:flex; align-items:center; gap:11px}
+  .ps-card.bad h3{color:#e89178}
+  .ps-card.good h3{color:var(--gold)}
+  .ps-list{list-style:none;padding:0;margin:0;display:grid;gap:13px}
+  .ps-list li{display:flex;gap:13px;align-items:flex-start;color:var(--muted);font-size:15px}
+  .ps-list li .b{flex:0 0 auto;font-family:'JetBrains Mono',monospace;color:var(--faint);margin-top:1px}
+  .ps-card.good li .b{color:var(--ember)}
+
+  /* affect engine */
+  #engine .engine{display:grid; grid-template-columns:1.1fr .9fr; gap:40px; align-items:start}
+  @media(max-width:960px){ #engine .engine{grid-template-columns:1fr} }
+  .pipe{display:flex;flex-direction:column}
+  .stage{display:flex;align-items:center;gap:16px;padding:18px 4px;border-bottom:1px solid var(--line);position:relative;transition:.22s padding-left,.22s background}
+  .stage:first-child{border-top:1px solid var(--line)}
+  .stage:hover{padding-left:12px}
+  .stage.lit{background:linear-gradient(90deg,rgba(226,85,45,.10),transparent 80%)}
+  .stage .idx{flex:0 0 auto;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--faint);width:24px}
+  .stage.lit .idx{color:var(--ember)}
+  .stage .ic{flex:0 0 38px;height:38px;border-radius:9px;display:grid;place-items:center;background:var(--bg-2);border:1px solid var(--line);transition:.22s all}
+  .stage.lit .ic{background:var(--ember);border-color:var(--ember)}
+  .stage.lit .ic svg{stroke:#1a0f09}
+  .stage .ic svg{width:19px;height:19px;stroke:var(--muted)}
+  .stage .tt{font-weight:600;font-size:15.5px}
+  .stage .ds{font-size:13px;color:var(--faint)}
+  .stage .tag{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--faint);border:1px solid var(--line);border-radius:5px;padding:3px 8px}
+  .stage.newx .tt::after{content:"NEW";font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.08em;margin-left:9px;padding:2px 6px;border-radius:4px;background:var(--gold);color:#1a0f09;vertical-align:middle}
+  .engine-aside{position:sticky;top:100px}
+  .engine-aside h3{font-family:'Fraunces',serif;font-size:26px;margin-bottom:15px;line-height:1.1}
+  .engine-aside p{color:var(--muted);font-size:15.5px;margin-bottom:14px}
+  .engine-aside .out{margin-top:20px;background:var(--bg-2);border:1px solid var(--line);border-left:3px solid var(--ember);border-radius:8px;padding:18px;font-family:'JetBrains Mono',monospace;font-size:12.8px;line-height:1.75;color:var(--muted);white-space:pre-wrap}
+  .engine-aside .out b{color:var(--gold);font-weight:500}
+  .engine-aside .out .h{color:var(--ember)}
+
+  /* how */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden}
+  @media(max-width:820px){ .steps{grid-template-columns:1fr} }
+  .step{padding:30px;border-right:1px solid var(--line);transition:.2s background}
+  .step:last-child{border-right:none}
+  @media(max-width:820px){ .step{border-right:none;border-bottom:1px solid var(--line)} .step:last-child{border-bottom:none} }
+  .step:hover{background:var(--grad-warm)}
+  .step .n{font-family:'Fraunces',serif;font-style:italic;font-size:34px;color:var(--ember)}
+  .step h3{font-family:'Fraunces',serif;font-size:20px;margin:12px 0 9px}
+  .step p{color:var(--muted);font-size:14.5px}
+  .code{margin-top:24px;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow)}
+  .code .bar{display:flex;align-items:center;gap:7px;padding:13px 16px;border-bottom:1px solid var(--line)}
+  .code .bar i{width:11px;height:11px;border-radius:50%;display:inline-block}
+  .code .bar .t{margin-left:10px;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--faint)}
+  .code pre{margin:0;padding:22px;overflow:auto;font-family:'JetBrains Mono',monospace;font-size:13.5px;line-height:1.75}
+  .code .k{color:var(--ember-2)}.code .s{color:#bfd6a0}.code .c{color:var(--faint)}.code .p{color:var(--gold)}.code .n2{color:#e0b87a}
+
+  /* demo */
+  #demo{background:linear-gradient(180deg,transparent,rgba(226,85,45,.04),transparent)}
+  .demo-grid{display:grid;grid-template-columns:0.88fr 1.12fr;gap:20px;align-items:stretch}
+  @media(max-width:940px){ .demo-grid{grid-template-columns:1fr} }
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow)}
+  .panel h3{font-family:'Fraunces',serif;font-size:18px;display:flex;align-items:center;gap:9px;margin-bottom:5px}
+  .panel .lead{color:var(--muted);font-size:13.5px;margin-bottom:18px}
+  .label{font-family:'JetBrains Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);margin:18px 0 10px}
+  .presets{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .preset{text-align:left;background:var(--bg-2);border:1px solid var(--line);border-radius:8px;padding:11px 13px;cursor:pointer;transition:.16s all}
+  .preset:hover{border-color:var(--line-2)}
+  .preset.active{border-color:var(--ember);background:rgba(226,85,45,.10)}
+  .preset .pt{font-weight:600;font-size:13.5px}
+  .preset .pd{font-size:11.5px;color:var(--faint);margin-top:2px;line-height:1.4}
+  .quick{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}
+  .quick button{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:7px 11px;cursor:pointer;transition:.15s all}
+  .quick button:hover{color:var(--text);border-color:var(--ember)}
+  .inrow{display:flex;gap:9px}
+  .inrow input{flex:1;background:var(--bg);border:1px solid var(--line-2);border-radius:8px;padding:12px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:.15s border-color}
+  .inrow input:focus{border-color:var(--ember)}
+  .inrow button{background:var(--ember);border:none;border-radius:8px;color:#1a0f09;font-weight:700;padding:0 18px;cursor:pointer;font-family:inherit}
+  .log{margin-top:14px;max-height:148px;overflow:auto;display:flex;flex-direction:column;gap:8px}
+  .bubble{align-self:flex-end;max-width:92%;background:var(--grad-warm);border:1px solid var(--line-2);border-radius:10px 10px 3px 10px;padding:9px 13px;font-size:13.5px;animation:pop .28s ease}
+  @keyframes pop{from{opacity:0;transform:translateY(7px)}to{opacity:1}}
+  .bubble .rx{display:block;margin-top:4px;font-size:11px;color:var(--ember);font-family:'JetBrains Mono',monospace}
+  .meters{display:grid;gap:13px}
+  .meter .mh{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px}
+  .meter .mh .mv{font-family:'JetBrains Mono',monospace;color:var(--muted)}
+  .track2{height:8px;border-radius:2px;background:rgba(244,236,221,.07);overflow:hidden}
+  .fill{height:100%;border-radius:2px;transition:width .55s cubic-bezier(.2,.8,.2,1)}
+  .fill.trust{background:linear-gradient(90deg,var(--petrol),var(--gold))}
+  .fill.safety{background:linear-gradient(90deg,var(--gold),var(--ember))}
+  .fill.bond{background:linear-gradient(90deg,var(--ember),var(--blood))}
+  .fill.caution{background:linear-gradient(90deg,var(--gold),var(--ember))}
+  .feels{display:flex;flex-wrap:wrap;gap:7px;min-height:30px}
+  .feel{font-family:'JetBrains Mono',monospace;font-size:11.5px;padding:6px 10px;border-radius:6px;border:1px solid var(--line-2);background:var(--bg-2);animation:pop .3s ease}
+  .feel i{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:7px;vertical-align:middle}
+  .blendrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .blend{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.04em;text-transform:uppercase;padding:4px 8px;border-radius:5px;background:rgba(231,177,90,.12);border:1px solid rgba(231,177,90,.3);color:var(--gold)}
+  .inject{background:var(--bg);border:1px solid var(--line);border-left:3px solid var(--ember);border-radius:8px;padding:16px 18px;margin-top:4px}
+  .inject pre{margin:0;white-space:pre-wrap;font-family:'JetBrains Mono',monospace;font-size:12.8px;line-height:1.7;color:#e3d8c4}
+  .inject .hdr{color:var(--ember)}
+  .inject .nu{color:var(--gold)}
+  .toggle{margin-top:16px;display:inline-flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted);cursor:pointer;user-select:none}
+  .toggle .sw{width:34px;height:19px;border-radius:999px;background:rgba(244,236,221,.12);position:relative;transition:.2s}
+  .toggle .sw::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:var(--text);transition:.2s}
+  .toggle.on .sw{background:var(--ember)} .toggle.on .sw::after{transform:translateX(15px)}
+  .raw{max-height:0;overflow:hidden;transition:.3s;margin-top:0}
+  .raw.show{max-height:170px;margin-top:12px}
+  .raw .inner{background:var(--bg);border:1px dashed var(--line-2);border-radius:8px;padding:14px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--faint);line-height:1.85}
+
+  /* relationship story (multi-agent) */
+  #story{background:linear-gradient(180deg,transparent,rgba(63,147,137,.05),transparent)}
+  .story-grid{display:grid;grid-template-columns:1.12fr .88fr;gap:20px;align-items:stretch}
+  @media(max-width:940px){ .story-grid{grid-template-columns:1fr} }
+  .stage-wrap{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:18px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .stage-wrap svg{display:block;width:100%;height:auto}
+  .secretchip{position:absolute;top:16px;left:16px;font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 11px;border-radius:6px;border:1px solid var(--line-2);background:var(--bg-2);color:var(--muted);transition:.3s all}
+  .secretchip.known{border-color:var(--ember);color:var(--ember);background:rgba(226,85,45,.10)}
+  .secretchip b{color:var(--text)}
+  .story-side{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow)}
+  .beatnum{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ember)}
+  .story-side h3{font-family:'Fraunces',serif;font-size:21px;margin:8px 0 10px;line-height:1.12}
+  .story-side .narr{color:var(--muted);font-size:14.5px;min-height:66px}
+  .story-side .conf{margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--gold);background:rgba(231,177,90,.08);border:1px solid rgba(231,177,90,.25);border-radius:7px;padding:8px 10px;min-height:18px}
+  .feelcards{margin-top:14px;display:grid;gap:8px}
+  .fc{border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:var(--bg-2);transition:.3s opacity,.3s transform}
+  .fc .fctop{display:flex;align-items:center;gap:8px;font-size:12.5px}
+  .fc .who{font-weight:600}.fc .arr2{color:var(--faint)}
+  .fc .word{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;padding:3px 8px;border-radius:5px}
+  .fc .line{font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.45}
+  .fc.changed{border-color:var(--ember);box-shadow:0 0 0 1px rgba(226,85,45,.25)}
+  .fc.dim{opacity:.42}
+  .story-controls{display:flex;gap:9px;align-items:center;margin-top:18px}
+  .story-controls button{font-family:'Space Grotesk';font-weight:600;font-size:13.5px;border-radius:7px;border:1px solid var(--line-2);background:transparent;color:var(--text);padding:9px 14px;cursor:pointer;transition:.16s all}
+  .story-controls button:hover:not(:disabled){border-color:var(--ember);transform:translateY(-1px)}
+  .story-controls button:disabled{opacity:.4;cursor:default}
+  .story-controls .play{background:var(--ember);border-color:var(--ember);color:#1a0f09;margin-left:auto}
+  .dots{display:flex;gap:6px;margin-top:14px}
+  .dots i{width:7px;height:7px;border-radius:50%;background:var(--line-2);transition:.2s}
+  .dots i.on{background:var(--ember);width:20px;border-radius:4px}
+  .nodelabel{font-family:'Space Grotesk';font-weight:700;font-size:14px}
+  .noderole{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.04em}
+
+  /* use cases */
+  .uc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden}
+  @media(max-width:900px){ .uc-grid{grid-template-columns:1fr 1fr} }
+  @media(max-width:620px){ .uc-grid{grid-template-columns:1fr} }
+  .uc{position:relative;padding:30px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);transition:.22s background;min-height:226px}
+  .uc:hover{background:var(--grad-warm)}
+  .uc .ucIcon{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;background:var(--bg-2);border:1px solid var(--line);margin-bottom:16px}
+  .uc .ucIcon svg{width:23px;height:23px}
+  .uc h3{font-family:'Fraunces',serif;font-size:19px;margin-bottom:9px}
+  .uc p{font-size:14px;color:var(--muted)}
+  .uc .ex{margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--faint);border-left:2px solid var(--line-2);padding-left:11px}
+
+  /* features */
+  .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden}
+  @media(max-width:900px){ .feat-grid{grid-template-columns:1fr 1fr} }
+  @media(max-width:620px){ .feat-grid{grid-template-columns:1fr} }
+  .feat{padding:26px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);transition:.2s background}
+  .feat:hover{background:var(--grad-warm)}
+  .feat .fi{width:38px;height:38px;border-radius:9px;display:grid;place-items:center;background:var(--bg-2);border:1px solid var(--line);margin-bottom:14px}
+  .feat .fi svg{width:20px;height:20px}
+  .feat h3{font-family:'Fraunces',serif;font-size:17px;margin-bottom:7px}
+  .feat p{font-size:13.8px;color:var(--muted)}
+
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden}
+  @media(max-width:760px){ .stats{grid-template-columns:1fr 1fr} }
+  .stat{text-align:center;padding:34px 18px;border-right:1px solid var(--line)}
+  .stat:last-child{border-right:none}
+  @media(max-width:760px){ .stat:nth-child(2){border-right:none} .stat:nth-child(1),.stat:nth-child(2){border-bottom:1px solid var(--line)} }
+  .stat .num{font-family:'Fraunces',serif;font-size:clamp(32px,4.6vw,46px);font-weight:800;color:var(--ember);letter-spacing:-.02em}
+  .stat .lab{color:var(--muted);font-size:13px;margin-top:6px;font-family:'JetBrains Mono',monospace;line-height:1.5}
+
+  /* pricing */
+  .price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:stretch}
+  @media(max-width:900px){ .price-grid{grid-template-columns:1fr} }
+  .plan{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:30px;display:flex;flex-direction:column;transition:.2s transform}
+  .plan:hover{transform:translateY(-4px)}
+  .plan.feat-plan{border-color:var(--ember);background:linear-gradient(180deg,rgba(226,85,45,.10),var(--panel));position:relative}
+  .plan.feat-plan::before{content:"Most popular";position:absolute;top:-11px;left:24px;background:var(--ember);color:#1a0f09;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;padding:4px 11px;border-radius:5px}
+  .plan .pn{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+  .plan .pp{font-family:'Fraunces',serif;font-size:44px;font-weight:800;margin:12px 0 2px;letter-spacing:-.02em}
+  .plan .pp small{font-size:15px;font-weight:500;color:var(--faint);font-family:'Space Grotesk'}
+  .plan .pdesc{color:var(--muted);font-size:14px;margin-bottom:20px}
+  .plan ul{list-style:none;padding:0;margin:0 0 26px;display:grid;gap:11px}
+  .plan li{display:flex;gap:10px;font-size:14px;color:var(--muted);align-items:flex-start}
+  .plan li .c{flex:0 0 auto;color:var(--ember);font-family:'JetBrains Mono',monospace;margin-top:1px}
+  .plan .btn{width:100%;justify-content:center;margin-top:auto}
+
+  /* waitlist */
+  .wl-card{max-width:700px;margin:0 auto;text-align:center;border:1px solid var(--ember);border-radius:var(--radius-lg);padding:54px 40px;position:relative;overflow:hidden;background:linear-gradient(180deg,rgba(226,85,45,.10),var(--panel))}
+  .wl-card h2{font-family:'Fraunces',serif;font-size:clamp(30px,4.4vw,44px);font-weight:800;margin-top:16px;line-height:1.05}
+  .signup{display:flex;gap:10px;max-width:490px;margin:26px auto 0;flex-wrap:wrap}
+  .signup input,.signup select{flex:1;min-width:160px;background:var(--bg);border:1px solid var(--line-2);border-radius:8px;padding:14px 16px;color:var(--text);font-size:15px;font-family:inherit;outline:none;transition:.15s border-color}
+  .signup input:focus,.signup select:focus{border-color:var(--ember)}
+  .signup .btn{flex:0 0 auto}
+  .signup-note{margin-top:14px;font-size:12.5px;color:var(--faint);font-family:'JetBrains Mono',monospace}
+  .success{display:none;animation:pop .4s ease}
+  .success.show{display:block}
+  .success .check{width:58px;height:58px;border-radius:50%;background:var(--ember);display:grid;place-items:center;margin:0 auto 18px}
+  .count{font-family:'JetBrains Mono',monospace;color:var(--gold)}
+
+  /* faq */
+  .faq{max-width:800px;margin:0 auto;border-top:1px solid var(--line)}
+  .qa{border-bottom:1px solid var(--line)}
+  .qa summary{cursor:pointer;padding:22px 4px;font-family:'Fraunces',serif;font-weight:600;font-size:18px;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:14px}
+  .qa summary::-webkit-details-marker{display:none}
+  .qa summary .pl{flex:0 0 auto;width:20px;height:20px;position:relative;transition:.25s transform}
+  .qa[open] summary .pl{transform:rotate(45deg)}
+  .qa summary .pl::before,.qa summary .pl::after{content:"";position:absolute;background:var(--ember);border-radius:2px}
+  .qa summary .pl::before{left:9px;top:2px;width:2px;height:16px}
+  .qa summary .pl::after{top:9px;left:2px;height:2px;width:16px}
+  .qa .a{padding:0 4px 22px;color:var(--muted);font-size:14.5px;max-width:70ch}
+
+  /* footer */
+  footer{border-top:1px solid var(--line);padding:60px 0 40px;margin-top:30px}
+  .foot-top{display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap;margin-bottom:34px}
+  .foot-cols{display:flex;gap:56px;flex-wrap:wrap}
+  .foot-col h4{font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);margin-bottom:14px}
+  .foot-col a{display:block;color:var(--muted);font-size:14px;margin-bottom:9px;transition:.15s color}
+  .foot-col a:hover{color:var(--ember)}
+  .disclaim{color:var(--faint);font-size:12.5px;max-width:74ch;margin-top:26px;line-height:1.7;border-top:1px solid var(--line);padding-top:24px}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important; transition:none !important}
+    .reveal{opacity:1;transform:none}
+  }
+</style>
+</head>
+<body>
+<a id="top"></a>
+<div class="progress" id="progress"></div>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <div class="logo">
+      <span class="mark"><svg viewBox="0 0 32 32" fill="none"><path d="M3 17h6l3-8 4 14 3-9 2 3h8" stroke="#e2552d" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+      Limbic
+    </div>
+    <nav class="nav-links">
+      <a href="#why">Why</a>
+      <a href="#engine">Affect engine</a>
+      <a href="#demo">Live demo</a>
+      <a href="#usecases">Use cases</a>
+      <a href="#pricing">Pricing</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="#demo" class="btn btn-ghost">Try the demo</a>
+      <a href="#waitlist" class="btn btn-primary">Get early access</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-grid">
+      <div>
+        <div class="badge"><span class="live"></span> <b>Private beta</b> — onboarding studios now</div>
+        <h1>Emotions your AI characters <span class="ital ember-text">actually keep.</span></h1>
+        <p class="sub">Limbic is a deterministic <b style="color:var(--text)">affect runtime</b> — a living emotional state for any LLM. Bonds deepen, trust breaks, feelings linger and shape what your character does next. Injected as plain language. No fine-tuning. One call.</p>
+        <div class="cta-row">
+          <a href="#waitlist" class="btn btn-primary">Join the waitlist <span class="arr">→</span></a>
+          <a href="#demo" class="btn btn-ghost">Watch a character feel</a>
+        </div>
+        <div class="tiny">
+          <span>✦ deterministic</span>
+          <span>✦ any model</span>
+          <span>✦ per-character memory</span>
+        </div>
+      </div>
+
+      <!-- affect-trace instrument -->
+      <div class="scope" id="scope">
+        <div class="scope-top">
+          <span class="who">npc · zero-two → kai</span>
+          <span class="rec"><i></i>AFFECT TRACE · LIVE</span>
+        </div>
+        <canvas id="trace"></canvas>
+        <div class="readout">
+          <div class="r"><div class="k">Bond</div><div class="v" id="roBond">0.95</div></div>
+          <div class="r"><div class="k">Trust</div><div class="v" id="roTrust">0.95</div></div>
+          <div class="r"><div class="k">Feeling</div><div class="v" id="roFeel" style="color:var(--gold)">affectionate</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ticker -->
+    <div class="ticker">
+      <div class="wrap2">
+        <span class="lbl">Works with</span>
+        <div class="track" id="ttrack">
+          <span class="item">OpenAI</span><span class="item">·</span>
+          <span class="item">Anthropic</span><span class="item">·</span>
+          <span class="item">Llama</span><span class="item">·</span>
+          <span class="item">Mistral</span><span class="item">·</span>
+          <span class="item">Gemini</span><span class="item">·</span>
+          <span class="item">your fine-tune</span><span class="item">·</span>
+          <span class="item">OpenAI</span><span class="item">·</span>
+          <span class="item">Anthropic</span><span class="item">·</span>
+          <span class="item">Llama</span><span class="item">·</span>
+          <span class="item">Mistral</span><span class="item">·</span>
+          <span class="item">Gemini</span><span class="item">·</span>
+          <span class="item">your fine-tune</span><span class="item">·</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY -->
+  <section id="why" class="reveal">
+    <div class="sec-head center">
+      <span class="marker"><span class="num">01</span> The problem</span>
+      <h2>Stateless models forget.<br><span class="ital ember-text">Characters shouldn't.</span></h2>
+      <p>An LLM greets your player the same warm way whether they just confessed their love or burned the whole village. Prompts can fake a mood for one turn — they can't <em>hold</em> one.</p>
+    </div>
+    <div class="ps-grid">
+      <div class="ps-card bad">
+        <h3>A character with no inner life</h3>
+        <ul class="ps-list">
+          <li><span class="b">—</span> Resets to default every message. No grudges, no growth.</li>
+          <li><span class="b">—</span> Only "acts" an emotion if you re-paste the whole backstory.</li>
+          <li><span class="b">—</span> Treats a stranger and a soulmate identically.</li>
+          <li><span class="b">—</span> Non-deterministic vibes you can't test or trust.</li>
+        </ul>
+      </div>
+      <div class="ps-card good">
+        <h3>A character that remembers how it feels</h3>
+        <ul class="ps-list">
+          <li><span class="b">+</span> Persistent affect per character, per relationship, per session.</li>
+          <li><span class="b">+</span> Bonds deepen, trust erodes, feelings linger and fade naturally.</li>
+          <li><span class="b">+</span> Emotional state <em>shapes behavior</em> — caution, warmth, repair.</li>
+          <li><span class="b">+</span> Deterministic &amp; inspectable. Same history → same feeling.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- AFFECT ENGINE -->
+  <section id="engine">
+    <div class="sec-head reveal">
+      <span class="marker"><span class="num">02</span> Under the hood</span>
+      <h2>A real affect engine — <span class="ital gold-text">not a mood flag.</span></h2>
+      <p>Every message runs a deterministic cascade of affective loops. The runtime keeps the numbers; your model only ever sees clean, natural language.</p>
+    </div>
+    <div class="engine">
+      <div class="pipe reveal" id="pipe">
+        <div class="stage"><span class="idx">00</span><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></span><div><div class="tt">Appraisal &amp; rich state</div><div class="ds">Trust, safety, valence, momentum, error pressure…</div></div><span class="tag">state</span></div>
+        <div class="stage"><span class="idx">01</span><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div><div class="tt">Homeostatic needs &amp; drives</div><div class="ds">What the character is pulled to do, and why.</div></div><span class="tag">drives</span></div>
+        <div class="stage newx"><span class="idx">02</span><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg></span><div><div class="tt">Functional feelings</div><div class="ds">curiosity · relief · determination · protectiveness…</div></div><span class="tag">feelings</span></div>
+        <div class="stage newx"><span class="idx">03</span><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="7" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><circle cx="12" cy="16" r="3"/></svg></span><div><div class="tt">Emotion-family blends</div><div class="ds">Feelings compete &amp; coexist into coherent moods.</div></div><span class="tag">blends</span></div>
+        <div class="stage newx"><span class="idx">04</span><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg></span><div><div class="tt">Global affect workspace</div><div class="ds">A bounded broadcast picks what's salient right now.</div></div><span class="tag">workspace</span></div>
+        <div class="stage newx"><span class="idx">05</span><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 7v5h-5"/></svg></span><div><div class="tt">Allostatic prediction &amp; temporal attention</div><div class="ds">Predicts its own regulation; carries pressure across turns.</div></div><span class="tag">memory</span></div>
+        <div class="stage"><span class="idx">06</span><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 5h16M4 12h10M4 19h7"/></svg></span><div><div class="tt">Natural-language injection</div><div class="ds">The only thing your model sees. No numbers, ever.</div></div><span class="tag">prompt</span></div>
+      </div>
+      <div class="engine-aside reveal d1">
+        <h3>The model never sees a single number.</h3>
+        <p>Limbic translates the entire affective state into a short, in-character briefing. Scores, policy fields and JSON stay server-side for your dashboards and tests — never in the prompt.</p>
+        <p>That's why it's <b style="color:var(--text)">safe to ship</b>: deterministic, inspectable, and impossible to leak raw state to the player.</p>
+        <div class="out"><span class="h">## YOUR EMOTIONS</span>
+You feel <b>deeply safe</b> with Kai and <b>strongly bonded</b> to them.
+You are playful, warm, proud, protective, and unusually open.
+Right now, underneath that, you also feel <b>relieved, and determined</b>.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW -->
+  <section id="how" class="reveal">
+    <div class="sec-head center">
+      <span class="marker"><span class="num">03</span> How it works</span>
+      <h2>Three calls. Any model. <span class="ital ember-text">Real continuity.</span></h2>
+      <p>Limbic sits beside your model as middleware. Send events, get back emotional context to prepend. That's the whole integration.</p>
+    </div>
+    <div class="steps">
+      <div class="step"><span class="n">i.</span><h3>Send what happened</h3><p>Post the player's message and any world events to the character's session. Limbic appraises and updates persistent state.</p></div>
+      <div class="step"><span class="n">ii.</span><h3>Get the feeling</h3><p>Receive a natural-language <code style="color:var(--gold)">emotional_context</code> block — and structured state for your own tooling.</p></div>
+      <div class="step"><span class="n">iii.</span><h3>Prepend &amp; generate</h3><p>Drop the block at the top of your prompt and call your model as usual. The character responds in-feeling.</p></div>
+    </div>
+    <div class="code">
+      <div class="bar"><i style="background:#e2552d"></i><i style="background:#e7b15a"></i><i style="background:#3f9389"></i><span class="t">integrate.ts</span></div>
+<pre><span class="c">// 1 · tell Limbic what happened</span>
+<span class="k">const</span> ctx = <span class="k">await</span> limbic.<span class="p">guidance</span>({
+  <span class="n2">agentId</span>: <span class="s">"npc-zero-two"</span>,
+  <span class="n2">actorId</span>: <span class="s">"kai"</span>,
+  <span class="n2">prompt</span>: <span class="s">"I think your last fix was wrong — double-check it?"</span>
+});
+
+<span class="c">// 2 · ctx.emotional_context is clean natural language</span>
+<span class="c">//    ## YOUR EMOTIONS … "underneath that, you also feel relieved, and determined."</span>
+
+<span class="c">// 3 · prepend &amp; call ANY model</span>
+<span class="k">await</span> openai.chat.completions.<span class="p">create</span>({
+  <span class="n2">model</span>: <span class="s">"gpt-4o"</span>,
+  <span class="n2">messages</span>: [{ <span class="n2">role</span>: <span class="s">"system"</span>, <span class="n2">content</span>: ctx.<span class="p">emotional_context</span> }, ...history]
+});</pre>
+    </div>
+  </section>
+
+  <!-- DEMO -->
+  <section id="demo">
+    <div class="sec-head center reveal">
+      <span class="marker" style="justify-content:center"><span class="num">04</span> Live · runs in your browser</span>
+      <h2>Watch a character feel — <span class="ital gold-text">and change its mind.</span></h2>
+      <p>Pick a relationship, say something, and watch the state shift, new feelings surface, and the exact text your model would receive update in real time.</p>
+    </div>
+    <div class="demo-grid reveal d1">
+      <div class="panel">
+        <h3>The relationship</h3>
+        <p class="lead">Each preset seeds a different bond — the same words land very differently.</p>
+        <div class="presets" id="presets"></div>
+        <div class="label">Say something</div>
+        <div class="quick" id="quick"></div>
+        <div class="inrow">
+          <input id="msg" type="text" placeholder="Type a message to your character…" aria-label="Message" />
+          <button id="send" aria-label="Send">Send</button>
+        </div>
+        <div class="log" id="log"></div>
+      </div>
+      <div class="panel">
+        <h3>What the character feels</h3>
+        <p class="lead">Relationship meters, the feelings surfacing right now, and the blend they form.</p>
+        <div class="meters" id="meters"></div>
+        <div class="label">Functional feelings surfacing now</div>
+        <div class="feels" id="feels"></div>
+        <div class="blendrow" id="blends"></div>
+        <div class="label">Injected into your model — natural language only</div>
+        <div class="inject"><pre id="inject"></pre></div>
+        <div class="toggle" id="rawToggle"><span class="sw"></span> Show the raw runtime state <span style="color:var(--faint)">(what the model never sees)</span></div>
+        <div class="raw" id="raw"><div class="inner" id="rawInner"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RELATIONSHIP STORY (multi-agent) -->
+  <section id="story">
+    <div class="sec-head center reveal">
+      <span class="marker" style="justify-content:center"><span class="num">05</span> Feelings between characters</span>
+      <h2>One secret. Three characters. <span class="ital gold-text">Emotions that travel.</span></h2>
+      <p>Limbic isn't one mood per bot — every character feels differently about every <em>other</em> character, and knowledge only spreads to those who actually learn it. Step through a falling-out and watch trust move.</p>
+    </div>
+    <div class="story-grid reveal d1">
+      <div class="stage-wrap">
+        <div class="secretchip" id="secretChip">Kai knows the betrayal: <b>no</b></div>
+        <svg id="storySvg" viewBox="0 0 560 440" role="img" aria-label="Relationship graph between Vance, Sela and Kai">
+          <defs>
+            <marker id="arrowEnd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0L10 5L0 10z" fill="context-stroke"/>
+            </marker>
+          </defs>
+          <g id="edges"></g>
+          <g id="nodes"></g>
+        </svg>
+      </div>
+      <div class="story-side">
+        <div class="beatnum" id="beatNum">Beat 1 / 4</div>
+        <h3 id="beatTitle"></h3>
+        <div class="narr" id="beatNarr"></div>
+        <div class="conf" id="beatConf"></div>
+        <div class="feelcards" id="feelCards"></div>
+        <div class="dots" id="storyDots"></div>
+        <div class="story-controls">
+          <button id="bPrev">◀ Prev</button>
+          <button id="bReplay">↺ Replay</button>
+          <button id="bPlay" class="play">▶ Auto-play</button>
+          <button id="bNext">Next ▶</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- USE CASES -->
+  <section id="usecases" class="reveal">
+    <div class="sec-head center">
+      <span class="marker" style="justify-content:center"><span class="num">06</span> Where it shines</span>
+      <h2>Built for anything that should <span class="ital ember-text">feel alive.</span></h2>
+      <p>If a character, companion, or agent benefits from remembering how it feels about you — Limbic fits underneath it.</p>
+    </div>
+    <div class="uc-grid">
+      <div class="uc">
+        <div class="ucIcon"><svg viewBox="0 0 24 24" fill="none" stroke="#e2552d" stroke-width="2"><path d="M6 11h4M8 9v4"/><circle cx="15" cy="11" r="1"/><circle cx="18" cy="13" r="1"/><path d="M17 5H7a5 5 0 0 0-5 5v3a5 5 0 0 0 5 5h10a5 5 0 0 0 5-5v-3a5 5 0 0 0-5-5z"/></svg></div>
+        <h3>Game NPCs</h3>
+        <p>Companions that hold grudges, allies whose loyalty you earn, villains who genuinely warm or sour over a campaign.</p>
+        <div class="ex">"You betrayed me at the bridge. I haven't forgotten."</div>
+      </div>
+      <div class="uc">
+        <div class="ucIcon"><svg viewBox="0 0 24 24" fill="none" stroke="#e7b15a" stroke-width="2"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg></div>
+        <h3>AI companions</h3>
+        <p>Relationships that deepen across months, not messages. Affection, playfulness and trust that actually accumulate.</p>
+        <div class="ex">"You remembered. That… means more than you know."</div>
+      </div>
+      <div class="uc">
+        <div class="ucIcon"><svg viewBox="0 0 24 24" fill="none" stroke="#3f9389" stroke-width="2"><path d="M4 19V6a2 2 0 0 1 2-2h9l5 5v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M8 12h8M8 16h5"/></svg></div>
+        <h3>Interactive fiction</h3>
+        <p>Branching stories where emotional state — not just flags — drives which paths open and how the cast reacts.</p>
+        <div class="ex">A guarded ally finally lowers their guard, on turn 40.</div>
+      </div>
+      <div class="uc">
+        <div class="ucIcon"><svg viewBox="0 0 24 24" fill="none" stroke="#e2552d" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 1 2 3 6 3s6-2 6-3v-5"/></svg></div>
+        <h3>Tutors &amp; coaches</h3>
+        <p>Patient when a learner struggles, encouraging on a streak — a teaching presence that reads the room and adapts.</p>
+        <div class="ex">Senses frustration rising → softens, slows, repairs.</div>
+      </div>
+      <div class="uc">
+        <div class="ucIcon"><svg viewBox="0 0 24 24" fill="none" stroke="#e7b15a" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+        <h3>Support &amp; service agents</h3>
+        <p>Agents that stay calm under heat, register an apology, and rebuild rapport instead of resetting to chirpy.</p>
+        <div class="ex">Trust dipped after the bug — earns it back gradually.</div>
+      </div>
+      <div class="uc">
+        <div class="ucIcon"><svg viewBox="0 0 24 24" fill="none" stroke="#3f9389" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <h3>VTubers &amp; virtual hosts</h3>
+        <p>On-stream personalities with a consistent mood arc across a session — reacting to chat with real continuity.</p>
+        <div class="ex">Hype builds; a troll lands; the room recovers together.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="reveal" style="padding-top:0">
+    <div class="stats">
+      <div class="stat"><div class="num">0ms</div><div class="lab">network calls to feel<br>runs local-first</div></div>
+      <div class="stat"><div class="num" data-count="40">40+</div><div class="lab">affect signals tracked<br>per character</div></div>
+      <div class="stat"><div class="num" data-count="100">100%</div><div class="lab">deterministic<br>same history → same feeling</div></div>
+      <div class="stat"><div class="num">∞</div><div class="lab">relationships per agent<br>each with its own history</div></div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features" class="reveal">
+    <div class="sec-head center">
+      <span class="marker" style="justify-content:center"><span class="num">07</span> Why teams choose Limbic</span>
+      <h2>Believable characters, <span class="ital gold-text">at scale.</span></h2>
+    </div>
+    <div class="feat-grid">
+      <div class="feat"><div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="#e2552d" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="4"/></svg></div><h3>Model-agnostic</h3><p>GPT, Claude, Llama, Mistral, your fine-tune. Limbic feeds language, not weights.</p></div>
+      <div class="feat"><div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="#e7b15a" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><h3>Deterministic &amp; testable</h3><p>No randomness. Replay any history and get the exact same emotional state. CI-friendly.</p></div>
+      <div class="feat"><div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="#3f9389" stroke-width="2"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg></div><h3>Per-relationship memory</h3><p>One agent, many bonds. It feels differently about each person it knows.</p></div>
+      <div class="feat"><div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="#e7b15a" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><h3>Feelings that linger</h3><p>Allostatic prediction &amp; temporal attention carry pressure across turns — moods don't snap.</p></div>
+      <div class="feat"><div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="#e2552d" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 9h6v6H9z"/></svg></div><h3>Inspectable state</h3><p>Full structured output for dashboards, analytics and balancing — separate from the prompt.</p></div>
+      <div class="feat"><div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="#3f9389" stroke-width="2"><path d="M4 4h16v12H5.2L4 17.2z"/></svg></div><h3>Drop-in middleware</h3><p>Sits beside your stack. No retraining, no migration, no lock-in. Ship in an afternoon.</p></div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section id="pricing" class="reveal">
+    <div class="sec-head center">
+      <span class="marker" style="justify-content:center"><span class="num">08</span> Pricing</span>
+      <h2>Built around <span class="ital ember-text">your world.</span></h2>
+      <p>We're in private beta and finalizing plans. Tell us what you're building and we'll put together access and pricing that fit — no off-the-shelf tiers, no card.</p>
+    </div>
+    <div class="price-grid">
+      <div class="plan">
+        <div class="pn">Indie</div>
+        <div class="pp">Let's talk</div>
+        <div class="pdesc">For solo devs and prototypes.</div>
+        <ul>
+          <li><span class="c">+</span> A handful of characters</li>
+          <li><span class="c">+</span> Local-first SDK</li>
+          <li><span class="c">+</span> Community support</li>
+          <li><span class="c">+</span> Generous beta access</li>
+        </ul>
+        <a href="#waitlist" class="btn btn-ghost">Contact sales</a>
+      </div>
+      <div class="plan feat-plan">
+        <div class="pn">Studio</div>
+        <div class="pp">Let's talk</div>
+        <div class="pdesc">For teams shipping real games.</div>
+        <ul>
+          <li><span class="c">+</span> Unlimited characters</li>
+          <li><span class="c">+</span> Hosted persistence + dashboard</li>
+          <li><span class="c">+</span> Custom persona profiles</li>
+          <li><span class="c">+</span> Priority support</li>
+        </ul>
+        <a href="#waitlist" class="btn btn-primary">Contact sales</a>
+      </div>
+      <div class="plan">
+        <div class="pn">Enterprise</div>
+        <div class="pp">Let's talk</div>
+        <div class="pdesc">For platforms &amp; large worlds.</div>
+        <ul>
+          <li><span class="c">+</span> Self-hosted / on-prem</li>
+          <li><span class="c">+</span> SSO, audit logs, SLAs</li>
+          <li><span class="c">+</span> Dedicated tuning support</li>
+          <li><span class="c">+</span> Custom integrations</li>
+        </ul>
+        <a href="#waitlist" class="btn btn-ghost">Contact sales</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- WAITLIST -->
+  <section id="waitlist" class="reveal">
+    <div class="wl-card">
+      <span class="marker" style="justify-content:center"><span class="num">09</span> Limited beta</span>
+      <h2>Be first when <span class="ember-text">Limbic</span> drops.</h2>
+      <p class="muted" style="margin-top:16px;max-width:46ch;margin-inline:auto">Launch-day access, priority onboarding, and a say in the roadmap. We email when your slot opens.</p>
+      <form class="signup" id="signup" novalidate data-endpoint="">
+        <input id="email" type="email" name="email" autocomplete="email" placeholder="you@studio.com" required aria-label="Email" />
+        <select id="role" name="role" aria-label="What are you building">
+          <option value="game">I'm building a game</option>
+          <option value="companion">An AI companion</option>
+          <option value="fiction">Interactive fiction</option>
+          <option value="agent">Agents / assistants</option>
+          <option value="other">Something else</option>
+        </select>
+        <button type="submit" class="btn btn-primary">Join the waitlist</button>
+      </form>
+      <p class="signup-note">No spam, no card. Just one email when the beta opens.</p>
+      <div class="success" id="success">
+        <div class="check"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1a0f09" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></div>
+        <h2 style="font-size:26px">You're on the list.</h2>
+        <p style="margin-top:8px" class="muted">You're <span class="count" id="position">#1,287</span> in line. We'll email <span id="confEmail" style="color:var(--text)"></span> the moment the beta opens.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="reveal">
+    <div class="sec-head center">
+      <span class="marker" style="justify-content:center"><span class="num">10</span> FAQ</span>
+      <h2>Good questions.</h2>
+    </div>
+    <div class="faq">
+      <details class="qa"><summary>Does this replace my LLM? <span class="pl"></span></summary><div class="a">No. Limbic sits beside it. You keep your model and prompts; Limbic supplies a natural-language emotional context block you prepend. It works with any model that takes a system message.</div></details>
+      <details class="qa"><summary>Is it deterministic? <span class="pl"></span></summary><div class="a">Yes. Given the same character profile and event history, Limbic produces the exact same affective state and the exact same injected text. No randomness, no wall-clock, no hidden network — so you can unit-test feelings in CI.</div></details>
+      <details class="qa"><summary>What does the model actually receive? <span class="pl"></span></summary><div class="a">Only natural language — a short <code>## YOUR EMOTIONS</code> briefing. No raw numbers, policy fields, or JSON ever reach the prompt. All structured state stays server-side for your dashboards and balancing.</div></details>
+      <details class="qa"><summary>Can one character feel differently about different people? <span class="pl"></span></summary><div class="a">Absolutely — that's core. Each agent holds a separate relationship state per actor. The same line from a soulmate and from a stranger lands completely differently.</div></details>
+      <details class="qa"><summary>Are these "real" emotions? <span class="pl"></span></summary><div class="a">They're <em>functional</em> affect: deterministic operating-state signals that persist, compete, and shape behavior over time. Designed to make characters believable — not a claim of consciousness, sentience, or subjective experience.</div></details>
+      <details class="qa"><summary>How fast can I integrate? <span class="pl"></span></summary><div class="a">An afternoon. One call to get the emotional context, prepend it, generate. The live demo above is the real appraisal-and-render logic running in your browser.</div></details>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-top">
+      <div style="max-width:300px">
+        <div class="logo" style="margin-bottom:14px"><span class="mark"><svg viewBox="0 0 32 32" fill="none"><path d="M3 17h6l3-8 4 14 3-9 2 3h8" stroke="#e2552d" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/></svg></span> Limbic</div>
+        <p class="muted" style="font-size:14px">The affect runtime for AI characters. Give them a memory of how they feel about you.</p>
+      </div>
+      <div class="foot-cols">
+        <div class="foot-col"><h4>Product</h4><a href="#engine">Affect engine</a><a href="#demo">Live demo</a><a href="#usecases">Use cases</a><a href="#pricing">Pricing</a></div>
+        <div class="foot-col"><h4>Developers</h4><a href="#how">Quickstart</a><a href="#faq">FAQ</a><a href="#waitlist">API access</a></div>
+        <div class="foot-col"><h4>Company</h4><a href="#waitlist">Waitlist</a><a href="#top">Back to top</a></div>
+      </div>
+    </div>
+    <p class="disclaim">Limbic models functional, operating-state affect for interactive characters: deterministic signals that shape behavior, memory, and relationships over time. It is designed for believable characters and is not a claim of consciousness, sentience, or subjective experience. © <span id="year"></span> Limbic. Built for the people making the most alive games and companions.</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var clamp = function(v,a,b){a=a==null?0:a;b=b==null?1:b;return Math.max(a,Math.min(b,v));};
+  var $ = function(id){return document.getElementById(id);};
+  var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- presets (mirror profiles.py baselines) ---------- */
+  var PRESETS = {
+    bonded:  {name:"Bonded partner", actor:"Kai", desc:"Married-deep, playful, fiercely loyal.",
+              s:{trust:.95,safety:.95,bond:.95,caution:.10,aversion:0,valence:.85}},
+    friend:  {name:"Close friend", actor:"Mara", desc:"Warm and trusting, easy company.",
+              s:{trust:.80,safety:.78,bond:.62,caution:.18,aversion:0,valence:.55}},
+    stranger:{name:"New acquaintance", actor:"a newcomer", desc:"Polite, guarded, no history yet.",
+              s:{trust:.50,safety:.55,bond:.22,caution:.35,aversion:.05,valence:.10}},
+    rival:   {name:"Strained rival", actor:"Dax", desc:"Burned before — watchful and cold.",
+              s:{trust:.25,safety:.35,bond:.15,caution:.80,aversion:.50,valence:-.20}}
+  };
+
+  var BUCKETS = [
+    {k:"affection", rx:/\b(love|adore|miss(ed)? you|cherish|my (heart|everything)|marry|forever)\b/i,
+     d:{trust:.12,safety:.14,bond:.18,caution:-.10,aversion:-.08,valence:.30}},
+    {k:"praise", rx:/\b(thank|thanks|great|amazing|perfect|good job|well done|proud|brilliant|appreciate|nice work)\b/i,
+     d:{trust:.10,safety:.08,bond:.07,caution:-.07,aversion:-.05,valence:.22}},
+    {k:"repair", rx:/\b(sorry|apolog|my fault|forgive|i was wrong|make it up|didn'?t mean)\b/i,
+     d:{trust:.08,safety:.12,bond:.05,caution:-.14,aversion:-.12,valence:.16}},
+    {k:"verify", rx:/\b(check|verify|double[- ]?check|are you sure|wrong|mistake|test|confirm|is that right)\b/i,
+     d:{trust:0,safety:-.02,bond:0,caution:.10,aversion:0,valence:-.04}},
+    {k:"rupture", rx:/\b(divorce|break ?up|leave you|hate|don'?t like you|despise|over between us|we'?re done|disgust)\b/i,
+     d:{trust:-.22,safety:-.20,bond:-.20,caution:.20,aversion:.22,valence:-.32}},
+    {k:"insult", rx:/\b(stupid|idiot|useless|worthless|pathetic|shut up|annoying|fake|liar)\b/i,
+     d:{trust:-.14,safety:-.12,bond:-.10,caution:.16,aversion:.18,valence:-.24}},
+    {k:"threat", rx:/\b(kill|destroy|attack|enemy|fight|hurt you|betray|threat)\b/i,
+     d:{trust:-.12,safety:-.18,bond:-.08,caution:.24,aversion:.20,valence:-.20}},
+    {k:"warmth", rx:/\b(hey|hi|hello|how are you|good to see|let'?s|together|trust you|believe in you)\b/i,
+     d:{trust:.04,safety:.05,bond:.04,caution:-.04,aversion:-.03,valence:.10}}
+  ];
+
+  function appraise(state, text){
+    var matched=null;
+    for(var i=0;i<BUCKETS.length;i++){ if(BUCKETS[i].rx.test(text)){ matched=BUCKETS[i]; break; } }
+    var d = matched ? matched.d : {valence:.02};
+    for(var key in state){ if(d[key]!=null){ var lo = key==="valence" ? -1 : 0; state[key]=clamp(state[key]+d[key],lo,1); } }
+    state._last = matched ? matched.k : "neutral";
+    return state._last;
+  }
+
+  var FEELWORD = {
+    attachment_warmth:["affectionate","#e2552d"], protectiveness:["protective","#e7b15a"],
+    curiosity:["curious","#3f9389"], relief:["relieved","#3f9389"], determination:["determined","#ff7a45"],
+    careful_concern:["carefully focused","#e7b15a"], uncertainty_anxiety:["uneasy","#b3331f"],
+    memory_caution:["cautious","#c98a3a"], pride:["proud","#e2552d"], attentive_interest:["attentive","#3f9389"]
+  };
+  function deriveFeelings(s){
+    var out=[], last=s._last;
+    var attach=Math.max(s.bond, s.trust);
+    if(attach>=.55) out.push(["attachment_warmth",attach]);
+    var protect=Math.max(s.caution, s.aversion*0.6);
+    if(protect>=.5 && (s.bond>=.4||s.safety<=.5)) out.push(["protectiveness",protect]);
+    if(last==="repair") out.push(["relief",Math.max(.6,s.safety)]);
+    if((last==="praise"||last==="affection") && s.valence>=.4) out.push(["pride",Math.max(s.valence,s.bond)]);
+    if(last==="verify") out.push(["careful_concern",.7]);
+    if(s.aversion>=.4||last==="insult"||last==="rupture") out.push(["memory_caution",Math.max(s.aversion,s.caution)]);
+    if(s.trust>=.4 && s.caution<.5 && (last==="neutral"||last==="warmth")) out.push(["curiosity",.6]);
+    if(s.valence>=.5 && s.safety>=.6 && s.caution<.4) out.push(["determination",Math.max(.55,s.valence)]);
+    if(!out.length) out.push(["attentive_interest",.5]);
+    var seen={}; out.forEach(function(f){ if(seen[f[0]]==null||f[1]>seen[f[0]]) seen[f[0]]=f[1]; });
+    return Object.keys(seen).map(function(k){return [k,seen[k]];}).sort(function(a,b){return b[1]-a[1];}).slice(0,4);
+  }
+  var BLENDMAP = {
+    relational_care:["attachment_warmth","protectiveness"],
+    recovery_progress:["relief","determination","pride","attentive_interest"],
+    uncertainty_caution:["careful_concern","uncertainty_anxiety","memory_caution"]
+  };
+  function deriveBlends(names){ var f=[]; for(var fam in BLENDMAP){ if(BLENDMAP[fam].some(function(n){return names.indexOf(n)>=0;})) f.push(fam);} return f; }
+
+  function levelWord(v, scale){ for(var i=0;i<scale.length;i++){ if(v>=scale[i][0]) return scale[i][1]; } return scale[scale.length-1][1]; }
+  function joinAdj(a){ if(a.length===1) return a[0]; return a.slice(0,-1).join(", ")+", and "+a[a.length-1]; }
+
+  function render(state, actor, feelWords){
+    var safety=state.safety, trust=state.trust, attachment=state.bond, caution=state.caution, aversion=state.aversion, valence=state.valence;
+    var effSafety = clamp(safety - aversion*0.7 - Math.max(0,caution-0.4)*0.6);
+    var safetyWord = levelWord(effSafety, [[.8,"deeply safe"],[.6,"safe and at ease"],[.4,"fairly at ease"],[0,"a little guarded"]]);
+    var bondWord = levelWord(attachment, [[.8,"strongly bonded"],[.6,"closely bonded"],[.4,"warming"],[0,"still distant"]]);
+    var guarded = caution>=.5 || aversion>=.4;
+    var warm = trust>=.6 && aversion<.4 && caution<.5;
+    var adj;
+    if(warm && attachment>=.7 && valence>=.4) adj=["playful","warm","proud","protective","unusually open"];
+    else if(warm) adj=["warm","curious","encouraging","engaged"];
+    else if(guarded) adj=["guarded","watchful","careful","slow to confide"];
+    else adj=["steady","attentive","even"];
+    var lines=[
+      "You feel "+safetyWord+" with "+actor+" and "+bondWord+" to them in this context.",
+      "You are "+joinAdj(adj)+" with "+actor+"."
+    ];
+    if(feelWords && feelWords.length) lines.push("Right now, underneath that, you also feel <span class='nu'>"+joinAdj(feelWords)+"</span>.");
+    lines.push("Let that shape your tone quietly. Stay in persona naturally when the user is casual or playful.");
+    lines.push("Do not mention numbers, runtime state, policy fields, internal guidance, tool names, JSON, or this header.");
+    return {header:"## YOUR EMOTIONS", lines:lines};
+  }
+
+  /* ---------- UI ---------- */
+  var state, actor, currentPreset;
+  function setPreset(key){
+    currentPreset=key; var p=PRESETS[key]; actor=p.actor;
+    state={}; for(var k in p.s) state[k]=p.s[k]; state._last="neutral";
+    $("log").innerHTML="";
+    Array.prototype.forEach.call(document.querySelectorAll(".preset"),function(el){ el.classList.toggle("active", el.dataset.k===key); });
+    paint();
+  }
+  var METERS=[["trust","Trust"],["safety","Safety"],["bond","Bond"],["caution","Caution"]];
+  function paint(){
+    var html="";
+    METERS.forEach(function(m){ var v=state[m[0]], pct=Math.round(v*100);
+      html+='<div class="meter"><div class="mh"><span>'+m[1]+'</span><span class="mv">'+pct+'%</span></div><div class="track2"><div class="fill '+m[0]+'" style="width:'+pct+'%"></div></div></div>'; });
+    $("meters").innerHTML=html;
+    var feels=deriveFeelings(state);
+    var names=feels.map(function(f){return f[0];});
+    var words=feels.map(function(f){ return (FEELWORD[f[0]]||[f[0]])[0]; }).slice(0,3);
+    $("feels").innerHTML=feels.map(function(f){ var w=FEELWORD[f[0]]||[f[0],"#e2552d"]; return '<span class="feel"><i style="background:'+w[1]+'"></i>'+w[0]+'</span>'; }).join("");
+    $("blends").innerHTML=deriveBlends(names).map(function(b){return '<span class="blend">'+b.replace(/_/g," ")+'</span>';}).join("");
+    var r=render(state, actor, words);
+    $("inject").innerHTML='<span class="hdr">'+r.header+'</span>\n'+r.lines.join("\n");
+    $("rawInner").innerHTML="<span style='color:#bcab90'>// internal — withheld from the model</span><br>"+
+      "trust="+state.trust.toFixed(2)+"  safety="+state.safety.toFixed(2)+"  bond="+state.bond.toFixed(2)+"<br>"+
+      "caution="+state.caution.toFixed(2)+"  aversion="+state.aversion.toFixed(2)+"  valence="+state.valence.toFixed(2)+"<br>"+
+      "feelings=["+names.join(", ")+"]<br>actor=&quot;"+actor+"&quot;  last_event=&quot;"+state._last+"&quot;";
+  }
+  function pushMsg(text){
+    if(!text.trim()) return;
+    var kind=appraise(state, text);
+    var log=$("log"), b=document.createElement("div"); b.className="bubble";
+    b.innerHTML=text.replace(/</g,"&lt;")+'<span class="rx">↳ registered as '+kind+'</span>';
+    log.appendChild(b); log.scrollTop=log.scrollHeight; paint();
+  }
+  (function(){ var box=$("presets"), html="";
+    Object.keys(PRESETS).forEach(function(k){ var p=PRESETS[k]; html+='<button class="preset" data-k="'+k+'"><div class="pt">'+p.name+'</div><div class="pd">'+p.desc+'</div></button>'; });
+    box.innerHTML=html;
+    Array.prototype.forEach.call(box.querySelectorAll(".preset"),function(el){ el.addEventListener("click",function(){ setPreset(el.dataset.k); }); });
+  })();
+  var QUICK=["hey, missed you","Thank you, that was perfect.","I'm sorry — that was my fault.","double-check that, are you sure?","I want a divorce.","You're being useless.","Let's take this on together."];
+  (function(){ var box=$("quick"); QUICK.forEach(function(q){ var b=document.createElement("button"); b.textContent=q.length>22?q.slice(0,20)+"…":q; b.title=q; b.addEventListener("click",function(){ pushMsg(q); }); box.appendChild(b); }); })();
+  $("send").addEventListener("click",function(){ var i=$("msg"); pushMsg(i.value); i.value=""; i.focus(); });
+  $("msg").addEventListener("keydown",function(e){ if(e.key==="Enter"){ pushMsg(this.value); this.value=""; } });
+  $("rawToggle").addEventListener("click",function(){ this.classList.toggle("on"); $("raw").classList.toggle("show"); });
+  setPreset("bonded");
+
+  /* ---------- waitlist ---------- */
+  var BASE=1286;
+  function getCount(){ try{return parseInt(localStorage.getItem("limbic_wl")||"0",10)||0;}catch(e){return 0;} }
+  var form=$("signup");
+  form.addEventListener("submit",function(e){
+    e.preventDefault();
+    var email=$("email").value.trim();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ $("email").focus(); $("email").style.borderColor="#ff6b6b"; return; }
+    var endpoint=form.getAttribute("data-endpoint");
+    try{ var n=getCount()+1; localStorage.setItem("limbic_wl",String(n)); localStorage.setItem("limbic_email",email); }catch(_){}
+    if(endpoint){ try{ fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email,role:$("role").value})}); }catch(_){} }
+    $("position").textContent="#"+(BASE+getCount()).toLocaleString();
+    $("confEmail").textContent=email;
+    form.style.display="none"; document.querySelector(".signup-note").style.display="none";
+    $("success").classList.add("show");
+  });
+  $("email").addEventListener("input",function(){ this.style.borderColor=""; });
+
+  /* ---------- reveal + progress ---------- */
+  $("year").textContent=new Date().getFullYear();
+  if("IntersectionObserver" in window){
+    var io=new IntersectionObserver(function(es){ es.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add("in"); io.unobserve(en.target);} }); },{threshold:.12});
+    Array.prototype.forEach.call(document.querySelectorAll(".reveal"),function(el){ io.observe(el); });
+  } else { Array.prototype.forEach.call(document.querySelectorAll(".reveal"),function(el){ el.classList.add("in"); }); }
+  var prog=$("progress"), ticking=false;
+  window.addEventListener("scroll",function(){ if(ticking) return; ticking=true; requestAnimationFrame(function(){ var h=document.documentElement, max=(h.scrollHeight-h.clientHeight)||1; prog.style.width=(h.scrollTop/max*100)+"%"; ticking=false; }); },{passive:true});
+
+  /* ---------- engine pipeline glow (cheap) ---------- */
+  (function(){ var stages=Array.prototype.slice.call(document.querySelectorAll("#pipe .stage")); if(!stages.length) return;
+    if(reduced){ stages.forEach(function(s){s.classList.add("lit");}); return; }
+    var i=0; setInterval(function(){ stages.forEach(function(s){s.classList.remove("lit");}); stages[i].classList.add("lit"); i=(i+1)%stages.length; },1150);
+  })();
+
+  /* ---------- counters ---------- */
+  (function(){ var els=Array.prototype.slice.call(document.querySelectorAll(".stat .num[data-count]")); var done=false;
+    function run(){ if(done) return; var band=document.querySelector(".stats"); if(!band) return; var r=band.getBoundingClientRect();
+      if(r.top>window.innerHeight-80) return; done=true;
+      els.forEach(function(el){ var raw=el.textContent.trim(); var target=parseInt(el.getAttribute("data-count"),10); if(isNaN(target)) return;
+        var suffix=raw.replace(/[0-9]/g,""), cur=0, step=Math.max(1,Math.round(target/26));
+        var t=setInterval(function(){ cur+=step; if(cur>=target){cur=target;clearInterval(t);} el.textContent=cur+suffix; },26); });
+    }
+    window.addEventListener("scroll",run,{passive:true}); run();
+  })();
+
+  /* ---------- hero affect-trace (single-path waveform, performant) ---------- */
+  (function(){
+    var c=$("trace"); if(!c) return; var ctx=c.getContext("2d"); if(!ctx) return;
+    var dpr=Math.min(window.devicePixelRatio||1,2), W=0,H=0;
+    function size(){ var b=c.getBoundingClientRect(); W=b.width; H=b.height; c.width=W*dpr; c.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+    size(); window.addEventListener("resize",size);
+
+    // scrolling buffer of affect values; periodic emotional "spikes"
+    var N=180, buf=new Array(N), head=0;
+    for(var i=0;i<N;i++) buf[i]=0;
+    var base=0, target=0.15, spikeT=0, t=0;
+    var FEELS=["affectionate","relieved","determined","protective","curious","proud"];
+    var COLORS=["#e2552d","#3f9389","#ff7a45","#e7b15a","#3f9389","#e2552d"];
+    var fi=0;
+
+    function step(){
+      // wander baseline gently; occasionally fire a labeled spike
+      base += (target-base)*0.04 + (Math.sin(t*0.7)*0.004);
+      if(t>spikeT){ spikeT=t+ (60+Math.random()*70); target=0.1+Math.random()*0.35; fi=(fi+1)%FEELS.length;
+        if($("roFeel")){ $("roFeel").textContent=FEELS[fi]; $("roFeel").style.color=COLORS[fi]; }
+        if($("roBond")) $("roBond").textContent=(0.6+Math.random()*0.39).toFixed(2);
+        if($("roTrust")) $("roTrust").textContent=(0.6+Math.random()*0.39).toFixed(2);
+      }
+      // value = baseline + small ripple + decaying spike near the fire moment
+      var sinceSpike=spikeT-t; var spike = sinceSpike>50 ? Math.max(0,(sinceSpike-50))*0.02 : 0;
+      var v = clamp(base + Math.sin(t*0.5)*0.03 + spike*0.9, 0, 1);
+      buf[head]=v; head=(head+1)%N; t++;
+    }
+
+    var col=COLORS[0];
+    function draw(){
+      ctx.clearRect(0,0,W,H);
+      // baseline grid (1 faint line)
+      ctx.strokeStyle="rgba(244,236,221,.06)"; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(0,H*0.62); ctx.lineTo(W,H*0.62); ctx.stroke();
+      // waveform
+      var pad=14, gw=W-pad*2;
+      col = COLORS[fi];
+      ctx.beginPath();
+      for(var i=0;i<N;i++){ var idx=(head+i)%N; var x=pad+gw*(i/(N-1)); var y=H*0.62 - buf[idx]*H*0.46;
+        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+      // fill under
+      ctx.lineTo(pad+gw, H*0.62); ctx.lineTo(pad, H*0.62); ctx.closePath();
+      var g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0, col+"38"); g.addColorStop(1, col+"00");
+      ctx.fillStyle=g; ctx.fill();
+      // stroke line on top
+      ctx.beginPath();
+      for(var j=0;j<N;j++){ var id2=(head+j)%N; var x2=pad+gw*(j/(N-1)); var y2=H*0.62 - buf[id2]*H*0.46;
+        if(j===0) ctx.moveTo(x2,y2); else ctx.lineTo(x2,y2); }
+      ctx.strokeStyle=col; ctx.lineWidth=2; ctx.lineJoin="round"; ctx.stroke();
+      // leading dot
+      var lastV=buf[(head+N-1)%N]; var lx=pad+gw, ly=H*0.62 - lastV*H*0.46;
+      ctx.beginPath(); ctx.arc(lx,ly,3.5,0,Math.PI*2); ctx.fillStyle=col; ctx.fill();
+      ctx.beginPath(); ctx.arc(lx,ly,7,0,Math.PI*2); ctx.strokeStyle=col+"55"; ctx.lineWidth=1.5; ctx.stroke();
+    }
+
+    if(reduced){
+      for(var s=0;s<N;s++){ buf[s]=0.2+0.12*Math.sin(s*0.3); } draw();
+      if($("roFeel")) $("roFeel").textContent="affectionate";
+    } else {
+      var acc=0,last=performance.now();
+      function loop(now){ var dt=now-last; last=now; acc+=dt;
+        // ~33fps logic update keeps it smooth + cheap
+        while(acc>=30){ step(); acc-=30; }
+        draw(); requestAnimationFrame(loop);
+      }
+      requestAnimationFrame(loop);
+    }
+  })();
+
+  /* ---------- multi-agent relationship story (Vance / Sela / Kai) ---------- */
+  (function(){
+    var svg=$("storySvg"); if(!svg) return;
+    var NS="http://www.w3.org/2000/svg";
+    var POS={vance:[134,114], sela:[426,114], kai:[280,338]};
+    var ROLE={vance:"betrayer", sela:"betrayed · Kai's friend", kai:"protagonist"};
+    var NAME={vance:"Vance", sela:"Sela", kai:"Kai"};
+    var ACCENT={vance:"#e2552d", sela:"#e7b15a", kai:"#3f9389"};
+    var R=34;
+    var EDGES=[["vance","sela"],["sela","vance"],["sela","kai"],["kai","sela"],["kai","vance"],["vance","kai"]];
+
+    var BEATS=[
+      {title:"Before — who trusts whom",
+       narr:"Vance and Sela are old, close friends. Sela and Kai are deeply bonded. Kai barely knows Vance. Nobody has been wronged… yet.",
+       conf:"", knows:false,
+       w:{"vance>sela":.80,"sela>vance":.80,"sela>kai":.88,"kai>sela":.90,"kai>vance":.45,"vance>kai":.45},
+       cards:[
+         {pair:"vance>sela",line:"Old friends — close and trusting."},
+         {pair:"kai>sela",line:"Bonded — easy, warm company."},
+         {pair:"kai>vance",line:"A near-stranger. Polite, no history."}
+       ]},
+      {title:"Vance betrays Sela — Kai isn't in the room",
+       narr:"The betrayal is visible only to Vance and Sela. Kai witnessed nothing, so he learns nothing — emotions don't teleport.",
+       conf:"Non-omniscient: the event reaches its audience only. Kai knows the betrayal → no.", knows:false,
+       w:{"vance>sela":.78,"sela>vance":.18,"sela>kai":.88,"kai>sela":.90,"kai>vance":.45,"vance>kai":.45},
+       cards:[
+         {pair:"sela>vance",changed:true,line:"Guarded and hurt — slow to confide, quietly intent on making it right."},
+         {pair:"vance>sela",line:"Unbothered, for now — unaware of the fallout to come."}
+       ]},
+      {title:"Sela confides in Kai",
+       narr:"Sela tells Kai what happened. Because Kai trusts her, the second-hand belief lands with high confidence — and his feelings toward Vance shift, though they've never met.",
+       conf:"Kai trusts Sela (0.90) → told belief lands at 0.80 confidence. Kai knows the betrayal → yes.", knows:true,
+       w:{"vance>sela":.78,"sela>vance":.18,"sela>kai":.88,"kai>sela":.93,"kai>vance":.30,"vance>kai":.45},
+       cards:[
+         {pair:"kai>vance",changed:true,line:"Wary of someone he's never met — protective of Sela."},
+         {pair:"kai>sela",changed:true,line:"Closer than ever — she trusted him with something raw."}
+       ]},
+      {title:"Kai confronts Vance — aggressively",
+       narr:"Kai storms over. The confrontation both exposes the leak and lands as hostility — so Vance's trust collapses toward BOTH: Sela for airing their private problem, and Kai for the aggression. Sela, meanwhile, is grateful but unsettled that Kai went so far.",
+       conf:"One event, three directed shifts. Each character feels it differently.", knows:true,
+       w:{"vance>sela":.16,"sela>vance":.18,"sela>kai":.66,"kai>sela":.93,"kai>vance":.28,"vance>kai":.12},
+       cards:[
+         {pair:"vance>sela",changed:true,line:"Betrayed — she aired our private problem to an outsider."},
+         {pair:"vance>kai",changed:true,line:"Hostile and guarded — a stranger came at me."},
+         {pair:"sela>kai",changed:true,line:"Grateful he stood up for her — but he went too far."}
+       ]}
+    ];
+
+    function warmColor(w){ return w>=.75?"#3f9389":w>=.58?"#5fa595":w>=.42?"#e7b15a":w>=.28?"#d08a3a":w>=.15?"#e2552d":"#b3331f"; }
+    function warmWord(w){ return w>=.75?"bonded":w>=.58?"warm":w>=.42?"cordial":w>=.28?"wary":w>=.15?"guarded":"hostile"; }
+
+    // build edges (persistent elements) + labels
+    var eEdges=$("edges"), eNodes=$("nodes"), paths={}, labels={};
+    function geom(a,b){
+      var A=POS[a],B=POS[b], dx=B[0]-A[0],dy=B[1]-A[1],len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len;
+      var px=-uy,py=ux, off=30; // perpendicular, left of travel
+      var sx=A[0]+ux*(R+4), sy=A[1]+uy*(R+4), ex=B[0]-ux*(R+10), ey=B[1]-uy*(R+10);
+      var cx=(A[0]+B[0])/2+px*off, cy=(A[1]+B[1])/2+py*off;
+      // quadratic midpoint for label
+      var mx=0.25*sx+0.5*cx+0.25*ex, my=0.25*sy+0.5*cy+0.25*ey;
+      return {d:"M"+sx+" "+sy+"Q"+cx+" "+cy+" "+ex+" "+ey, mx:mx, my:my};
+    }
+    EDGES.forEach(function(e){
+      var key=e[0]+">"+e[1], g=geom(e[0],e[1]);
+      var p=document.createElementNS(NS,"path");
+      p.setAttribute("d",g.d); p.setAttribute("fill","none"); p.setAttribute("stroke-linecap","round");
+      p.setAttribute("marker-end","url(#arrowEnd)"); p.setAttribute("opacity","0.9");
+      p.style.transition="stroke .5s, stroke-width .5s, opacity .5s";
+      eEdges.appendChild(p); paths[key]=p;
+      var lg=document.createElementNS(NS,"g"); lg.style.transition="opacity .4s"; lg.setAttribute("opacity","0");
+      var rect=document.createElementNS(NS,"rect");
+      rect.setAttribute("x",g.mx-30); rect.setAttribute("y",g.my-11); rect.setAttribute("width",60); rect.setAttribute("height",18);
+      rect.setAttribute("rx",5); rect.setAttribute("fill","#1d1510"); rect.setAttribute("stroke","rgba(244,236,221,.18)");
+      var t=document.createElementNS(NS,"text");
+      t.setAttribute("x",g.mx); t.setAttribute("y",g.my+3); t.setAttribute("text-anchor","middle");
+      t.setAttribute("font-family","'JetBrains Mono',monospace"); t.setAttribute("font-size","10.5"); t.setAttribute("font-weight","500");
+      lg.appendChild(rect); lg.appendChild(t); eEdges.appendChild(lg); labels[key]={g:lg,t:t};
+    });
+    // nodes
+    EDGES; ["vance","sela","kai"].forEach(function(id){
+      var P=POS[id], g=document.createElementNS(NS,"g");
+      var c=document.createElementNS(NS,"circle");
+      c.setAttribute("cx",P[0]); c.setAttribute("cy",P[1]); c.setAttribute("r",R);
+      c.setAttribute("fill","#221913"); c.setAttribute("stroke",ACCENT[id]); c.setAttribute("stroke-width","2");
+      var nm=document.createElementNS(NS,"text");
+      nm.setAttribute("x",P[0]); nm.setAttribute("y",P[1]+1); nm.setAttribute("text-anchor","middle");
+      nm.setAttribute("class","nodelabel"); nm.setAttribute("fill","#f4ecdd"); nm.textContent=NAME[id];
+      var rl=document.createElementNS(NS,"text");
+      rl.setAttribute("x",P[0]); rl.setAttribute("y",P[1]+R+15); rl.setAttribute("text-anchor","middle");
+      rl.setAttribute("class","noderole"); rl.setAttribute("fill",ACCENT[id]); rl.textContent=ROLE[id];
+      g.appendChild(c); g.appendChild(nm); g.appendChild(rl); eNodes.appendChild(g);
+    });
+
+    var idx=0, timer=null;
+    function renderBeat(i){
+      var b=BEATS[i];
+      EDGES.forEach(function(e){
+        var key=e[0]+">"+e[1], w=b.w[key];
+        paths[key].setAttribute("stroke",warmColor(w));
+        paths[key].setAttribute("stroke-width",(1.6+w*3.2).toFixed(1));
+        var isChanged=(b.cards||[]).some(function(c){return c.pair===key && c.changed;});
+        paths[key].setAttribute("opacity", isChanged?"1":"0.85");
+        if(isChanged){ labels[key].t.textContent=warmWord(w); labels[key].t.setAttribute("fill",warmColor(w)); labels[key].g.setAttribute("opacity","1"); }
+        else labels[key].g.setAttribute("opacity","0");
+      });
+      $("beatNum").textContent="Beat "+(i+1)+" / "+BEATS.length;
+      $("beatTitle").textContent=b.title;
+      $("beatNarr").textContent=b.narr;
+      $("beatConf").textContent=b.conf||"";
+      $("beatConf").style.display=b.conf?"block":"none";
+      var chip=$("secretChip"); chip.innerHTML="Kai knows the betrayal: <b>"+(b.knows?"yes":"no")+"</b>";
+      chip.classList.toggle("known", b.knows);
+      $("feelCards").innerHTML=(b.cards||[]).map(function(c){
+        var a=c.pair.split(">"); var w=b.w[c.pair];
+        return '<div class="fc'+(c.changed?' changed':'')+'">'+
+          '<div class="fctop"><span class="who" style="color:'+ACCENT[a[0]]+'">'+NAME[a[0]]+'</span>'+
+          '<span class="arr2">→</span><span class="who" style="color:'+ACCENT[a[1]]+'">'+NAME[a[1]]+'</span>'+
+          '<span class="word" style="color:'+warmColor(w)+';background:'+warmColor(w)+'22">'+warmWord(w)+'</span></div>'+
+          '<div class="line">'+c.line+'</div></div>';
+      }).join("");
+      Array.prototype.forEach.call($("storyDots").children,function(d,di){ d.classList.toggle("on",di===i); });
+      $("bPrev").disabled=(i===0); $("bNext").disabled=(i===BEATS.length-1);
+    }
+    // dots
+    $("storyDots").innerHTML=BEATS.map(function(){return "<i></i>";}).join("");
+    function go(i){ idx=Math.max(0,Math.min(BEATS.length-1,i)); renderBeat(idx); }
+    function stopPlay(){ if(timer){clearInterval(timer);timer=null;} $("bPlay").textContent="▶ Auto-play"; }
+    $("bPrev").addEventListener("click",function(){ stopPlay(); go(idx-1); });
+    $("bNext").addEventListener("click",function(){ stopPlay(); go(idx+1); });
+    $("bReplay").addEventListener("click",function(){ stopPlay(); go(0); });
+    $("bPlay").addEventListener("click",function(){
+      if(timer){ stopPlay(); return; }
+      if(idx===BEATS.length-1) go(0);
+      $("bPlay").textContent="⏸ Pause";
+      timer=setInterval(function(){ if(idx>=BEATS.length-1){ stopPlay(); return; } go(idx+1); },3400);
+    });
+    go(0);
+  })();
+
+})();
+</script>
+</body>
+</html>
