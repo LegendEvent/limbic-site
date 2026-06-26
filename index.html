@@ -515,10 +515,13 @@ Right now, underneath that, you also feel <b>relieved, and determined</b>.</div>
     </div>
     <div class="code">
       <div class="bar"><i style="background:#e2552d"></i><i style="background:#e7b15a"></i><i style="background:#3f9389"></i><span class="t">integrate.ts</span></div>
-<pre><span class="c">// 1 · tell Limbic what happened</span>
-<span class="k">const</span> ctx = <span class="k">await</span> limbic.<span class="p">guidance</span>({
-  <span class="n2">agentId</span>: <span class="s">"npc-zero-two"</span>,
-  <span class="n2">actorId</span>: <span class="s">"kai"</span>,
+<pre><span class="k">import</span> { AgentEmotionClient } <span class="k">from</span> <span class="s">"@agent-emotion-system/runtime-sdk"</span>;
+
+<span class="k">const</span> limbic = <span class="k">new</span> AgentEmotionClient({ <span class="n2">baseUrl</span>: <span class="s">"http://127.0.0.1:8000"</span> });
+
+<span class="c">// 1 · tell Limbic what happened</span>
+<span class="k">const</span> ctx = <span class="k">await</span> limbic.<span class="p">postGuidance</span>(<span class="s">"npc-zero-two"</span>, {
+  <span class="n2">actor_id</span>: <span class="s">"kai"</span>,
   <span class="n2">prompt</span>: <span class="s">"I think your last fix was wrong — double-check it?"</span>
 });
 
