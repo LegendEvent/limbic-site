@@ -5,15 +5,12 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Limbic — the affect runtime for AI characters</title>
-<meta name="description" content="Limbic gives AI characters a living emotional state: persistent feelings, bonds that deepen, trust that breaks, and a self-model that remembers. A deterministic affect engine injected into any LLM as natural language. Drop-in API." />
-<meta property="og:title" content="Limbic — emotions your AI characters actually keep" />
-<meta property="og:description" content="A deterministic affect runtime: functional feelings, emotion-family blends, allostatic prediction and a self-model — for any LLM." />
+<meta name="description" content="Limbic gives AI characters persistent functional affect state: bonds that update, trust that changes, and a self-model that carries deterministic operating-state continuity. Optional model integrations receive natural-language context." />
+<meta property="og:title" content="Limbic — persistent functional affect for AI characters" />
+<meta property="og:description" content="A deterministic affect runtime: functional affect state, emotion-family blends, allostatic prediction and a self-model for host-owned model integrations." />
 <meta property="og:type" content="website" />
 <meta name="theme-color" content="#17110d" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23170f0b'/%3E%3Cpath d='M3 17h6l3-8 4 14 3-9 2 3h8' fill='none' stroke='%23e2552d' stroke-width='2.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,500&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <style>
   :root{
     /* warm espresso + ember/gold — deliberately NOT the purple/pink AI cliché */
@@ -31,7 +28,7 @@
   html{scroll-behavior:smooth}
   body{
     margin:0; background:var(--bg); color:var(--text);
-    font-family:'Space Grotesk',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
     line-height:1.6; -webkit-font-smoothing:antialiased; overflow-x:hidden;
   }
   /* static warm grain + vignette — no animated blur, cheap to paint */
@@ -48,15 +45,15 @@
   h1,h2,h3{margin:0; letter-spacing:-.01em}
   p{margin:0}
   .wrap{max-width:var(--maxw); margin:0 auto; padding:0 26px}
-  .serif{font-family:'Fraunces',Georgia,serif}
-  .ital{font-family:'Fraunces',serif; font-style:italic; font-weight:500}
-  .mono{font-family:'JetBrains Mono',monospace}
+  .serif{font-family:Georgia,'Times New Roman',serif}
+  .ital{font-family:Georgia,'Times New Roman',serif; font-style:italic; font-weight:500}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
   .ember-text{color:var(--ember)}
   .gold-text{color:var(--gold)}
   .muted{color:var(--muted)}
 
   /* index marker (field-journal style) */
-  .marker{display:inline-flex; align-items:center; gap:11px; font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--ember)}
+  .marker{display:inline-flex; align-items:center; gap:11px; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--ember)}
   .marker::before{content:""; width:26px; height:1px; background:var(--ember)}
   .marker .num{color:var(--faint)}
 
@@ -64,7 +61,7 @@
   .progress{position:fixed;top:0;left:0;height:2px;width:0;z-index:99;background:var(--ember);box-shadow:0 0 10px rgba(226,85,45,.6)}
 
   /* buttons — squared, tactile, no glow-pill cliché */
-  .btn{position:relative; display:inline-flex; align-items:center; gap:10px; font-family:'Space Grotesk'; font-weight:600; font-size:15px; padding:14px 22px; border-radius:var(--radius); border:1px solid var(--line-2); cursor:pointer; transition:.18s transform,.18s background,.18s border-color,.18s color; white-space:nowrap; background:transparent; color:var(--text)}
+  .btn{position:relative; display:inline-flex; align-items:center; gap:10px; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; font-weight:600; font-size:15px; padding:14px 22px; border-radius:var(--radius); border:1px solid var(--line-2); cursor:pointer; transition:.18s transform,.18s background,.18s border-color,.18s color; white-space:nowrap; background:transparent; color:var(--text)}
   .btn-primary{background:var(--ember); border-color:var(--ember); color:#1a0f09}
   .btn-primary:hover{background:var(--ember-2); border-color:var(--ember-2); transform:translateY(-2px)}
   .btn-ghost:hover{background:rgba(244,236,221,.05); border-color:var(--line-2); transform:translateY(-2px)}
@@ -74,7 +71,7 @@
   /* nav */
   header.nav{position:sticky; top:0; z-index:60; background:rgba(23,17,13,.82); backdrop-filter:blur(8px); border-bottom:1px solid var(--line)}
   .nav-inner{display:flex; align-items:center; justify-content:space-between; height:70px}
-  .logo{display:flex; align-items:center; gap:11px; font-family:'Fraunces',serif; font-weight:800; font-size:23px; letter-spacing:-.02em}
+  .logo{display:flex; align-items:center; gap:11px; font-family:Georgia,'Times New Roman',serif; font-weight:800; font-size:23px; letter-spacing:-.02em}
   .logo .mark{width:32px;height:32px;border-radius:8px;background:var(--bg-2);border:1px solid var(--line-2);display:grid;place-items:center}
   .logo .mark svg{width:22px;height:22px}
   .nav-links{display:flex; gap:30px; align-items:center}
@@ -92,23 +89,23 @@
   .badge b{color:var(--text);font-weight:600}
   .badge .live{width:7px;height:7px;border-radius:50%;background:var(--petrol);box-shadow:0 0 9px var(--petrol);animation:blink 2.2s infinite}
   @keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
-  .hero h1{font-family:'Fraunces',serif; font-weight:800; font-size:clamp(44px,6.6vw,82px); line-height:.98; letter-spacing:-.025em; max-width:15ch}
+  .hero h1{font-family:Georgia,'Times New Roman',serif; font-weight:800; font-size:clamp(44px,6.6vw,82px); line-height:.98; letter-spacing:-.025em; max-width:15ch}
   .hero h1 .ital{font-weight:500}
   .hero .sub{max-width:52ch; margin:26px 0 0; font-size:clamp(16px,2vw,19px); color:var(--muted)}
   .cta-row{display:flex; gap:13px; margin-top:32px; flex-wrap:wrap}
-  .tiny{margin-top:20px; font-size:12.5px; color:var(--faint); display:flex; gap:20px; flex-wrap:wrap; font-family:'JetBrains Mono',monospace}
+  .tiny{margin-top:20px; font-size:12.5px; color:var(--faint); display:flex; gap:20px; flex-wrap:wrap; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
   .tiny span{display:inline-flex;align-items:center;gap:7px}
 
   /* hero affect-trace instrument */
   .scope{position:relative; border:1px solid var(--line); border-radius:var(--radius-lg); background:linear-gradient(180deg,rgba(34,25,19,.7),rgba(23,17,13,.5)); overflow:hidden; box-shadow:var(--shadow)}
-  .scope .scope-top{display:flex; align-items:center; justify-content:space-between; padding:13px 16px; border-bottom:1px solid var(--line); font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--faint); letter-spacing:.04em}
+  .scope .scope-top{display:flex; align-items:center; justify-content:space-between; padding:13px 16px; border-bottom:1px solid var(--line); font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:11.5px; color:var(--faint); letter-spacing:.04em}
   .scope .scope-top .who{color:var(--text)}
   .scope .scope-top .rec{display:inline-flex;align-items:center;gap:7px;color:var(--ember)}
   .scope .scope-top .rec i{width:7px;height:7px;border-radius:50%;background:var(--ember);animation:blink 1.4s infinite}
   .scope canvas{display:block; width:100%; height:300px}
   @media(max-width:960px){ .scope canvas{height:230px} }
   .scope .readout{display:flex; gap:0; border-top:1px solid var(--line)}
-  .scope .readout .r{flex:1; padding:12px 14px; border-right:1px solid var(--line); font-family:'JetBrains Mono',monospace}
+  .scope .readout .r{flex:1; padding:12px 14px; border-right:1px solid var(--line); font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
   .scope .readout .r:last-child{border-right:none}
   .scope .readout .r .k{font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint)}
   .scope .readout .r .v{font-size:16px; color:var(--text); margin-top:3px}
@@ -116,16 +113,16 @@
   /* ticker — set like a printed specimen strip */
   .ticker{margin-top:50px; border-top:1px solid var(--line); border-bottom:1px solid var(--line)}
   .ticker .wrap2{display:flex; align-items:center; gap:0; overflow:hidden; -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent); mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
-  .ticker .lbl{flex:0 0 auto; padding:16px 22px 16px 0; font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--faint); border-right:1px solid var(--line)}
+  .ticker .lbl{flex:0 0 auto; padding:16px 22px 16px 0; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--faint); border-right:1px solid var(--line)}
   .ticker .track{display:flex; gap:46px; width:max-content; animation:slide 30s linear infinite; padding-left:46px}
   .ticker:hover .track{animation-play-state:paused}
   @keyframes slide{to{transform:translateX(-50%)}}
-  .ticker .item{font-family:'Fraunces',serif; font-weight:600; font-size:17px; color:var(--muted); white-space:nowrap; padding:16px 0}
+  .ticker .item{font-family:Georgia,'Times New Roman',serif; font-weight:600; font-size:17px; color:var(--muted); white-space:nowrap; padding:16px 0}
 
   section{padding:104px 0; position:relative}
   .sec-head{max-width:none; margin:0 0 54px}
   .sec-head.center{text-align:center; max-width:62ch; margin-inline:auto}
-  .sec-head h2{font-family:'Fraunces',serif; font-weight:800; font-size:clamp(32px,4.6vw,52px); line-height:1.02; letter-spacing:-.025em; margin-top:18px}
+  .sec-head h2{font-family:Georgia,'Times New Roman',serif; font-weight:800; font-size:clamp(32px,4.6vw,52px); line-height:1.02; letter-spacing:-.025em; margin-top:18px}
   .sec-head p{color:var(--muted); margin-top:18px; font-size:17.5px; max-width:60ch}
   .sec-head.center p{margin-inline:auto}
 
@@ -140,12 +137,12 @@
   .ps-card.bad{background:rgba(179,51,31,.05); border-right:1px solid var(--line)}
   @media(max-width:820px){ .ps-card.bad{border-right:none; border-bottom:1px solid var(--line)} }
   .ps-card.good{background:linear-gradient(180deg,rgba(226,85,45,.10),transparent)}
-  .ps-card h3{font-family:'Fraunces',serif; font-size:23px; margin-bottom:16px; display:flex; align-items:center; gap:11px}
+  .ps-card h3{font-family:Georgia,'Times New Roman',serif; font-size:23px; margin-bottom:16px; display:flex; align-items:center; gap:11px}
   .ps-card.bad h3{color:#e89178}
   .ps-card.good h3{color:var(--gold)}
   .ps-list{list-style:none;padding:0;margin:0;display:grid;gap:13px}
   .ps-list li{display:flex;gap:13px;align-items:flex-start;color:var(--muted);font-size:15px}
-  .ps-list li .b{flex:0 0 auto;font-family:'JetBrains Mono',monospace;color:var(--faint);margin-top:1px}
+  .ps-list li .b{flex:0 0 auto;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--faint);margin-top:1px}
   .ps-card.good li .b{color:var(--ember)}
 
   /* affect engine */
@@ -156,7 +153,7 @@
   .stage:first-child{border-top:1px solid var(--line)}
   .stage:hover{padding-left:12px}
   .stage.lit{background:linear-gradient(90deg,rgba(226,85,45,.10),transparent 80%)}
-  .stage .idx{flex:0 0 auto;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--faint);width:24px}
+  .stage .idx{flex:0 0 auto;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--faint);width:24px}
   .stage.lit .idx{color:var(--ember)}
   .stage .ic{flex:0 0 38px;height:38px;border-radius:9px;display:grid;place-items:center;background:var(--bg-2);border:1px solid var(--line);transition:.22s all}
   .stage.lit .ic{background:var(--ember);border-color:var(--ember)}
@@ -164,12 +161,12 @@
   .stage .ic svg{width:19px;height:19px;stroke:var(--muted)}
   .stage .tt{font-weight:600;font-size:15.5px}
   .stage .ds{font-size:13px;color:var(--faint)}
-  .stage .tag{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--faint);border:1px solid var(--line);border-radius:5px;padding:3px 8px}
-  .stage.newx .tt::after{content:"NEW";font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.08em;margin-left:9px;padding:2px 6px;border-radius:4px;background:var(--gold);color:#1a0f09;vertical-align:middle}
+  .stage .tag{margin-left:auto;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:10.5px;color:var(--faint);border:1px solid var(--line);border-radius:5px;padding:3px 8px}
+  .stage.newx .tt::after{content:"NEW";font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:9px;font-weight:700;letter-spacing:.08em;margin-left:9px;padding:2px 6px;border-radius:4px;background:var(--gold);color:#1a0f09;vertical-align:middle}
   .engine-aside{position:sticky;top:100px}
-  .engine-aside h3{font-family:'Fraunces',serif;font-size:26px;margin-bottom:15px;line-height:1.1}
+  .engine-aside h3{font-family:Georgia,'Times New Roman',serif;font-size:26px;margin-bottom:15px;line-height:1.1}
   .engine-aside p{color:var(--muted);font-size:15.5px;margin-bottom:14px}
-  .engine-aside .out{margin-top:20px;background:var(--bg-2);border:1px solid var(--line);border-left:3px solid var(--ember);border-radius:8px;padding:18px;font-family:'JetBrains Mono',monospace;font-size:12.8px;line-height:1.75;color:var(--muted);white-space:pre-wrap}
+  .engine-aside .out{margin-top:20px;background:var(--bg-2);border:1px solid var(--line);border-left:3px solid var(--ember);border-radius:8px;padding:18px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.8px;line-height:1.75;color:var(--muted);white-space:pre-wrap}
   .engine-aside .out b{color:var(--gold);font-weight:500}
   .engine-aside .out .h{color:var(--ember)}
 
@@ -180,14 +177,14 @@
   .step:last-child{border-right:none}
   @media(max-width:820px){ .step{border-right:none;border-bottom:1px solid var(--line)} .step:last-child{border-bottom:none} }
   .step:hover{background:var(--grad-warm)}
-  .step .n{font-family:'Fraunces',serif;font-style:italic;font-size:34px;color:var(--ember)}
-  .step h3{font-family:'Fraunces',serif;font-size:20px;margin:12px 0 9px}
+  .step .n{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:34px;color:var(--ember)}
+  .step h3{font-family:Georgia,'Times New Roman',serif;font-size:20px;margin:12px 0 9px}
   .step p{color:var(--muted);font-size:14.5px}
   .code{margin-top:24px;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow)}
   .code .bar{display:flex;align-items:center;gap:7px;padding:13px 16px;border-bottom:1px solid var(--line)}
   .code .bar i{width:11px;height:11px;border-radius:50%;display:inline-block}
-  .code .bar .t{margin-left:10px;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--faint)}
-  .code pre{margin:0;padding:22px;overflow:auto;font-family:'JetBrains Mono',monospace;font-size:13.5px;line-height:1.75}
+  .code .bar .t{margin-left:10px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:var(--faint)}
+  .code pre{margin:0;padding:22px;overflow:auto;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px;line-height:1.75}
   .code .k{color:var(--ember-2)}.code .s{color:#bfd6a0}.code .c{color:var(--faint)}.code .p{color:var(--gold)}.code .n2{color:#e0b87a}
 
   /* demo */
@@ -195,9 +192,9 @@
   .demo-grid{display:grid;grid-template-columns:0.88fr 1.12fr;gap:20px;align-items:stretch}
   @media(max-width:940px){ .demo-grid{grid-template-columns:1fr} }
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow)}
-  .panel h3{font-family:'Fraunces',serif;font-size:18px;display:flex;align-items:center;gap:9px;margin-bottom:5px}
+  .panel h3{font-family:Georgia,'Times New Roman',serif;font-size:18px;display:flex;align-items:center;gap:9px;margin-bottom:5px}
   .panel .lead{color:var(--muted);font-size:13.5px;margin-bottom:18px}
-  .label{font-family:'JetBrains Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);margin:18px 0 10px}
+  .label{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);margin:18px 0 10px}
   .presets{display:grid;grid-template-columns:1fr 1fr;gap:9px}
   .preset{text-align:left;background:var(--bg-2);border:1px solid var(--line);border-radius:8px;padding:11px 13px;cursor:pointer;transition:.16s all}
   .preset:hover{border-color:var(--line-2)}
@@ -205,7 +202,7 @@
   .preset .pt{font-weight:600;font-size:13.5px}
   .preset .pd{font-size:11.5px;color:var(--faint);margin-top:2px;line-height:1.4}
   .quick{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}
-  .quick button{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:7px 11px;cursor:pointer;transition:.15s all}
+  .quick button{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11.5px;color:var(--muted);background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:7px 11px;cursor:pointer;transition:.15s all}
   .quick button:hover{color:var(--text);border-color:var(--ember)}
   .inrow{display:flex;gap:9px}
   .inrow input{flex:1;background:var(--bg);border:1px solid var(--line-2);border-radius:8px;padding:12px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:.15s border-color}
@@ -214,10 +211,10 @@
   .log{margin-top:14px;max-height:148px;overflow:auto;display:flex;flex-direction:column;gap:8px}
   .bubble{align-self:flex-end;max-width:92%;background:var(--grad-warm);border:1px solid var(--line-2);border-radius:10px 10px 3px 10px;padding:9px 13px;font-size:13.5px;animation:pop .28s ease}
   @keyframes pop{from{opacity:0;transform:translateY(7px)}to{opacity:1}}
-  .bubble .rx{display:block;margin-top:4px;font-size:11px;color:var(--ember);font-family:'JetBrains Mono',monospace}
+  .bubble .rx{display:block;margin-top:4px;font-size:11px;color:var(--ember);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
   .meters{display:grid;gap:13px}
   .meter .mh{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px}
-  .meter .mh .mv{font-family:'JetBrains Mono',monospace;color:var(--muted)}
+  .meter .mh .mv{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted)}
   .track2{height:8px;border-radius:2px;background:rgba(244,236,221,.07);overflow:hidden}
   .fill{height:100%;border-radius:2px;transition:width .55s cubic-bezier(.2,.8,.2,1)}
   .fill.trust{background:linear-gradient(90deg,var(--petrol),var(--gold))}
@@ -225,12 +222,12 @@
   .fill.bond{background:linear-gradient(90deg,var(--ember),var(--blood))}
   .fill.caution{background:linear-gradient(90deg,var(--gold),var(--ember))}
   .feels{display:flex;flex-wrap:wrap;gap:7px;min-height:30px}
-  .feel{font-family:'JetBrains Mono',monospace;font-size:11.5px;padding:6px 10px;border-radius:6px;border:1px solid var(--line-2);background:var(--bg-2);animation:pop .3s ease}
+  .feel{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11.5px;padding:6px 10px;border-radius:6px;border:1px solid var(--line-2);background:var(--bg-2);animation:pop .3s ease}
   .feel i{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:7px;vertical-align:middle}
   .blendrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-  .blend{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.04em;text-transform:uppercase;padding:4px 8px;border-radius:5px;background:rgba(231,177,90,.12);border:1px solid rgba(231,177,90,.3);color:var(--gold)}
+  .blend{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:10px;letter-spacing:.04em;text-transform:uppercase;padding:4px 8px;border-radius:5px;background:rgba(231,177,90,.12);border:1px solid rgba(231,177,90,.3);color:var(--gold)}
   .inject{background:var(--bg);border:1px solid var(--line);border-left:3px solid var(--ember);border-radius:8px;padding:16px 18px;margin-top:4px}
-  .inject pre{margin:0;white-space:pre-wrap;font-family:'JetBrains Mono',monospace;font-size:12.8px;line-height:1.7;color:#e3d8c4}
+  .inject pre{margin:0;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.8px;line-height:1.7;color:#e3d8c4}
   .inject .hdr{color:var(--ember)}
   .inject .nu{color:var(--gold)}
   .toggle{margin-top:16px;display:inline-flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted);cursor:pointer;user-select:none}
@@ -239,7 +236,7 @@
   .toggle.on .sw{background:var(--ember)} .toggle.on .sw::after{transform:translateX(15px)}
   .raw{max-height:0;overflow:hidden;transition:.3s;margin-top:0}
   .raw.show{max-height:170px;margin-top:12px}
-  .raw .inner{background:var(--bg);border:1px dashed var(--line-2);border-radius:8px;padding:14px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--faint);line-height:1.85}
+  .raw .inner{background:var(--bg);border:1px dashed var(--line-2);border-radius:8px;padding:14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--faint);line-height:1.85}
 
   /* relationship story (multi-agent) */
   #story{background:linear-gradient(180deg,transparent,rgba(63,147,137,.05),transparent)}
@@ -247,32 +244,32 @@
   @media(max-width:940px){ .story-grid{grid-template-columns:1fr} }
   .stage-wrap{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:18px;box-shadow:var(--shadow);position:relative;overflow:hidden}
   .stage-wrap svg{display:block;width:100%;height:auto}
-  .secretchip{position:absolute;top:16px;left:16px;font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 11px;border-radius:6px;border:1px solid var(--line-2);background:var(--bg-2);color:var(--muted);transition:.3s all}
+  .secretchip{position:absolute;top:16px;left:16px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;padding:6px 11px;border-radius:6px;border:1px solid var(--line-2);background:var(--bg-2);color:var(--muted);transition:.3s all}
   .secretchip.known{border-color:var(--ember);color:var(--ember);background:rgba(226,85,45,.10)}
   .secretchip b{color:var(--text)}
   .story-side{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow)}
-  .beatnum{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ember)}
-  .story-side h3{font-family:'Fraunces',serif;font-size:21px;margin:8px 0 10px;line-height:1.12}
+  .beatnum{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ember)}
+  .story-side h3{font-family:Georgia,'Times New Roman',serif;font-size:21px;margin:8px 0 10px;line-height:1.12}
   .story-side .narr{color:var(--muted);font-size:14.5px;min-height:66px}
-  .story-side .conf{margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--gold);background:rgba(231,177,90,.08);border:1px solid rgba(231,177,90,.25);border-radius:7px;padding:8px 10px;min-height:18px}
+  .story-side .conf{margin-top:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11.5px;color:var(--gold);background:rgba(231,177,90,.08);border:1px solid rgba(231,177,90,.25);border-radius:7px;padding:8px 10px;min-height:18px}
   .feelcards{margin-top:14px;display:grid;gap:8px}
   .fc{border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:var(--bg-2);transition:.3s opacity,.3s transform}
   .fc .fctop{display:flex;align-items:center;gap:8px;font-size:12.5px}
   .fc .who{font-weight:600}.fc .arr2{color:var(--faint)}
-  .fc .word{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;padding:3px 8px;border-radius:5px}
+  .fc .word{margin-left:auto;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;padding:3px 8px;border-radius:5px}
   .fc .line{font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.45}
   .fc.changed{border-color:var(--ember);box-shadow:0 0 0 1px rgba(226,85,45,.25)}
   .fc.dim{opacity:.42}
   .story-controls{display:flex;gap:9px;align-items:center;margin-top:18px}
-  .story-controls button{font-family:'Space Grotesk';font-weight:600;font-size:13.5px;border-radius:7px;border:1px solid var(--line-2);background:transparent;color:var(--text);padding:9px 14px;cursor:pointer;transition:.16s all}
+  .story-controls button{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-weight:600;font-size:13.5px;border-radius:7px;border:1px solid var(--line-2);background:transparent;color:var(--text);padding:9px 14px;cursor:pointer;transition:.16s all}
   .story-controls button:hover:not(:disabled){border-color:var(--ember);transform:translateY(-1px)}
   .story-controls button:disabled{opacity:.4;cursor:default}
   .story-controls .play{background:var(--ember);border-color:var(--ember);color:#1a0f09;margin-left:auto}
   .dots{display:flex;gap:6px;margin-top:14px}
   .dots i{width:7px;height:7px;border-radius:50%;background:var(--line-2);transition:.2s}
   .dots i.on{background:var(--ember);width:20px;border-radius:4px}
-  .nodelabel{font-family:'Space Grotesk';font-weight:700;font-size:14px}
-  .noderole{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.04em}
+  .nodelabel{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-weight:700;font-size:14px}
+  .noderole{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:9.5px;letter-spacing:.04em}
 
   /* use cases */
   .uc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden}
@@ -282,9 +279,9 @@
   .uc:hover{background:var(--grad-warm)}
   .uc .ucIcon{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;background:var(--bg-2);border:1px solid var(--line);margin-bottom:16px}
   .uc .ucIcon svg{width:23px;height:23px}
-  .uc h3{font-family:'Fraunces',serif;font-size:19px;margin-bottom:9px}
+  .uc h3{font-family:Georgia,'Times New Roman',serif;font-size:19px;margin-bottom:9px}
   .uc p{font-size:14px;color:var(--muted)}
-  .uc .ex{margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--faint);border-left:2px solid var(--line-2);padding-left:11px}
+  .uc .ex{margin-top:14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--faint);border-left:2px solid var(--line-2);padding-left:11px}
 
   /* features */
   .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden}
@@ -294,7 +291,7 @@
   .feat:hover{background:var(--grad-warm)}
   .feat .fi{width:38px;height:38px;border-radius:9px;display:grid;place-items:center;background:var(--bg-2);border:1px solid var(--line);margin-bottom:14px}
   .feat .fi svg{width:20px;height:20px}
-  .feat h3{font-family:'Fraunces',serif;font-size:17px;margin-bottom:7px}
+  .feat h3{font-family:Georgia,'Times New Roman',serif;font-size:17px;margin-bottom:7px}
   .feat p{font-size:13.8px;color:var(--muted)}
 
   /* stats */
@@ -303,8 +300,8 @@
   .stat{text-align:center;padding:34px 18px;border-right:1px solid var(--line)}
   .stat:last-child{border-right:none}
   @media(max-width:760px){ .stat:nth-child(2){border-right:none} .stat:nth-child(1),.stat:nth-child(2){border-bottom:1px solid var(--line)} }
-  .stat .num{font-family:'Fraunces',serif;font-size:clamp(32px,4.6vw,46px);font-weight:800;color:var(--ember);letter-spacing:-.02em}
-  .stat .lab{color:var(--muted);font-size:13px;margin-top:6px;font-family:'JetBrains Mono',monospace;line-height:1.5}
+  .stat .num{font-family:Georgia,'Times New Roman',serif;font-size:clamp(32px,4.6vw,46px);font-weight:800;color:var(--ember);letter-spacing:-.02em}
+  .stat .lab{color:var(--muted);font-size:13px;margin-top:6px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;line-height:1.5}
 
   /* pricing */
   .price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:stretch}
@@ -312,33 +309,33 @@
   .plan{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:30px;display:flex;flex-direction:column;transition:.2s transform}
   .plan:hover{transform:translateY(-4px)}
   .plan.feat-plan{border-color:var(--ember);background:linear-gradient(180deg,rgba(226,85,45,.10),var(--panel));position:relative}
-  .plan.feat-plan::before{content:"Most popular";position:absolute;top:-11px;left:24px;background:var(--ember);color:#1a0f09;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;padding:4px 11px;border-radius:5px}
-  .plan .pn{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
-  .plan .pp{font-family:'Fraunces',serif;font-size:44px;font-weight:800;margin:12px 0 2px;letter-spacing:-.02em}
-  .plan .pp small{font-size:15px;font-weight:500;color:var(--faint);font-family:'Space Grotesk'}
+  .plan.feat-plan::before{content:"Most popular";position:absolute;top:-11px;left:24px;background:var(--ember);color:#1a0f09;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;padding:4px 11px;border-radius:5px}
+  .plan .pn{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+  .plan .pp{font-family:Georgia,'Times New Roman',serif;font-size:44px;font-weight:800;margin:12px 0 2px;letter-spacing:-.02em}
+  .plan .pp small{font-size:15px;font-weight:500;color:var(--faint);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
   .plan .pdesc{color:var(--muted);font-size:14px;margin-bottom:20px}
   .plan ul{list-style:none;padding:0;margin:0 0 26px;display:grid;gap:11px}
   .plan li{display:flex;gap:10px;font-size:14px;color:var(--muted);align-items:flex-start}
-  .plan li .c{flex:0 0 auto;color:var(--ember);font-family:'JetBrains Mono',monospace;margin-top:1px}
+  .plan li .c{flex:0 0 auto;color:var(--ember);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;margin-top:1px}
   .plan .btn{width:100%;justify-content:center;margin-top:auto}
 
-  /* waitlist */
+  /* beta CTA */
   .wl-card{max-width:700px;margin:0 auto;text-align:center;border:1px solid var(--ember);border-radius:var(--radius-lg);padding:54px 40px;position:relative;overflow:hidden;background:linear-gradient(180deg,rgba(226,85,45,.10),var(--panel))}
-  .wl-card h2{font-family:'Fraunces',serif;font-size:clamp(30px,4.4vw,44px);font-weight:800;margin-top:16px;line-height:1.05}
+  .wl-card h2{font-family:Georgia,'Times New Roman',serif;font-size:clamp(30px,4.4vw,44px);font-weight:800;margin-top:16px;line-height:1.05}
   .signup{display:flex;gap:10px;max-width:490px;margin:26px auto 0;flex-wrap:wrap}
   .signup input,.signup select{flex:1;min-width:160px;background:var(--bg);border:1px solid var(--line-2);border-radius:8px;padding:14px 16px;color:var(--text);font-size:15px;font-family:inherit;outline:none;transition:.15s border-color}
   .signup input:focus,.signup select:focus{border-color:var(--ember)}
   .signup .btn{flex:0 0 auto}
-  .signup-note{margin-top:14px;font-size:12.5px;color:var(--faint);font-family:'JetBrains Mono',monospace}
+  .signup-note{margin-top:14px;font-size:12.5px;color:var(--faint);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
   .success{display:none;animation:pop .4s ease}
   .success.show{display:block}
   .success .check{width:58px;height:58px;border-radius:50%;background:var(--ember);display:grid;place-items:center;margin:0 auto 18px}
-  .count{font-family:'JetBrains Mono',monospace;color:var(--gold)}
+  .count{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--gold)}
 
   /* faq */
   .faq{max-width:800px;margin:0 auto;border-top:1px solid var(--line)}
   .qa{border-bottom:1px solid var(--line)}
-  .qa summary{cursor:pointer;padding:22px 4px;font-family:'Fraunces',serif;font-weight:600;font-size:18px;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:14px}
+  .qa summary{cursor:pointer;padding:22px 4px;font-family:Georgia,'Times New Roman',serif;font-weight:600;font-size:18px;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:14px}
   .qa summary::-webkit-details-marker{display:none}
   .qa summary .pl{flex:0 0 auto;width:20px;height:20px;position:relative;transition:.25s transform}
   .qa[open] summary .pl{transform:rotate(45deg)}
@@ -351,7 +348,7 @@
   footer{border-top:1px solid var(--line);padding:60px 0 40px;margin-top:30px}
   .foot-top{display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap;margin-bottom:34px}
   .foot-cols{display:flex;gap:56px;flex-wrap:wrap}
-  .foot-col h4{font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);margin-bottom:14px}
+  .foot-col h4{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);margin-bottom:14px}
   .foot-col a{display:block;color:var(--muted);font-size:14px;margin-bottom:9px;transition:.15s color}
   .foot-col a:hover{color:var(--ember)}
   .disclaim{color:var(--faint);font-size:12.5px;max-width:74ch;margin-top:26px;line-height:1.7;border-top:1px solid var(--line);padding-top:24px}
@@ -381,7 +378,7 @@
     </nav>
     <div class="nav-cta">
       <a href="#demo" class="btn btn-ghost">Try the demo</a>
-      <a href="#waitlist" class="btn btn-primary">Get early access</a>
+      <a href="#beta" class="btn btn-primary">Beta notes</a>
     </div>
   </div>
 </header>
@@ -393,15 +390,15 @@
     <div class="hero-grid">
       <div>
         <div class="badge"><span class="live"></span> <b>Private beta</b> — onboarding studios now</div>
-        <h1>Emotions your AI characters <span class="ital ember-text">actually keep.</span></h1>
-        <p class="sub">Limbic is a deterministic <b style="color:var(--text)">affect runtime</b> — a living emotional state for any LLM. Bonds deepen, trust breaks, feelings linger and shape what your character does next. Injected as plain language. No fine-tuning. One call.</p>
+        <h1>Functional affect your AI characters <span class="ital ember-text">carry forward.</span></h1>
+        <p class="sub">Limbic is a deterministic <b style="color:var(--text)">affect runtime</b> — persistent operating-state continuity for host-owned model integrations. Bonds update, trust changes, and affect-style state shapes what your character does next. Injected as plain language. No fine-tuning required by the runtime.</p>
         <div class="cta-row">
-          <a href="#waitlist" class="btn btn-primary">Join the waitlist <span class="arr">→</span></a>
-          <a href="#demo" class="btn btn-ghost">Watch a character feel</a>
+          <a href="#beta" class="btn btn-primary">See beta notes <span class="arr">→</span></a>
+          <a href="#demo" class="btn btn-ghost">Inspect state change</a>
         </div>
         <div class="tiny">
           <span>✦ deterministic</span>
-          <span>✦ any model</span>
+          <span>✦ caller-owned model integration</span>
           <span>✦ per-character memory</span>
         </div>
       </div>
@@ -424,7 +421,7 @@
     <!-- ticker -->
     <div class="ticker">
       <div class="wrap2">
-        <span class="lbl">Works with</span>
+        <span class="lbl">Caller-owned integrations</span>
         <div class="track" id="ttrack">
           <span class="item">OpenAI</span><span class="item">·</span>
           <span class="item">Anthropic</span><span class="item">·</span>
@@ -466,7 +463,7 @@
           <li><span class="b">+</span> Persistent affect per character, per relationship, per session.</li>
           <li><span class="b">+</span> Bonds deepen, trust erodes, feelings linger and fade naturally.</li>
           <li><span class="b">+</span> Emotional state <em>shapes behavior</em> — caution, warmth, repair.</li>
-          <li><span class="b">+</span> Deterministic &amp; inspectable. Same history → same feeling.</li>
+          <li><span class="b">+</span> Deterministic &amp; inspectable. Same history → same deterministic state.</li>
         </ul>
       </div>
     </div>
@@ -476,8 +473,8 @@
   <section id="engine">
     <div class="sec-head reveal">
       <span class="marker"><span class="num">02</span> Under the hood</span>
-      <h2>A real affect engine — <span class="ital gold-text">not a mood flag.</span></h2>
-      <p>Every message runs a deterministic cascade of affective loops. The runtime keeps the numbers; your model only ever sees clean, natural language.</p>
+      <h2>A deterministic affect engine — <span class="ital gold-text">not a mood flag.</span></h2>
+      <p>Every message runs a deterministic cascade of affective loops. The default integration renders natural-language context for optional caller-owned model calls.</p>
     </div>
     <div class="engine">
       <div class="pipe reveal" id="pipe">
@@ -487,12 +484,12 @@
         <div class="stage newx"><span class="idx">03</span><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="7" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><circle cx="12" cy="16" r="3"/></svg></span><div><div class="tt">Emotion-family blends</div><div class="ds">Feelings compete &amp; coexist into coherent moods.</div></div><span class="tag">blends</span></div>
         <div class="stage newx"><span class="idx">04</span><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg></span><div><div class="tt">Global affect workspace</div><div class="ds">A bounded broadcast picks what's salient right now.</div></div><span class="tag">workspace</span></div>
         <div class="stage newx"><span class="idx">05</span><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 7v5h-5"/></svg></span><div><div class="tt">Allostatic prediction &amp; temporal attention</div><div class="ds">Predicts its own regulation; carries pressure across turns.</div></div><span class="tag">memory</span></div>
-        <div class="stage"><span class="idx">06</span><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 5h16M4 12h10M4 19h7"/></svg></span><div><div class="tt">Natural-language injection</div><div class="ds">The only thing your model sees. No numbers, ever.</div></div><span class="tag">prompt</span></div>
+        <div class="stage"><span class="idx">06</span><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 5h16M4 12h10M4 19h7"/></svg></span><div><div class="tt">Natural-language context</div><div class="ds">Default prompt input is emotional_context, not debug state.</div></div><span class="tag">prompt</span></div>
       </div>
       <div class="engine-aside reveal d1">
-        <h3>The model never sees a single number.</h3>
-        <p>Limbic translates the entire affective state into a short, in-character briefing. Scores, policy fields and JSON stay server-side for your dashboards and tests — never in the prompt.</p>
-        <p>That's why it's <b style="color:var(--text)">safe to ship</b>: deterministic, inspectable, and impossible to leak raw state to the player.</p>
+        <h3>The default prompt input is natural language.</h3>
+        <p>Limbic renders affect state into a short, in-character <code>emotional_context</code> briefing. Structured scores, policy fields and JSON are available for dashboards and tests, but callers should avoid injecting debug or runtime fields into player-facing prompts.</p>
+        <p>That's why it is <b style="color:var(--text)">practical to audit</b>: deterministic, inspectable, and designed to keep prompt context separate from structured runtime state by default.</p>
         <div class="out"><span class="h">## YOUR EMOTIONS</span>
 You feel <b>deeply safe</b> with Kai and <b>strongly bonded</b> to them.
 You are playful, warm, proud, protective, and unusually open.
@@ -505,13 +502,13 @@ Right now, underneath that, you also feel <b>relieved, and determined</b>.</div>
   <section id="how" class="reveal">
     <div class="sec-head center">
       <span class="marker"><span class="num">03</span> How it works</span>
-      <h2>Three calls. Any model. <span class="ital ember-text">Real continuity.</span></h2>
-      <p>Limbic sits beside your model as middleware. Send events, get back emotional context to prepend. That's the whole integration.</p>
+      <h2>Three calls. Optional model step. <span class="ital ember-text">Persistent continuity.</span></h2>
+      <p>Limbic sits beside your model as middleware. Send events, get back emotional context to prepend. External model calls are caller-owned optional integrations and are not performed by the runtime by default.</p>
     </div>
     <div class="steps">
       <div class="step"><span class="n">i.</span><h3>Send what happened</h3><p>Post the player's message and any world events to the character's session. Limbic appraises and updates persistent state.</p></div>
-      <div class="step"><span class="n">ii.</span><h3>Get the feeling</h3><p>Receive a natural-language <code style="color:var(--gold)">emotional_context</code> block — and structured state for your own tooling.</p></div>
-      <div class="step"><span class="n">iii.</span><h3>Prepend &amp; generate</h3><p>Drop the block at the top of your prompt and call your model as usual. The character responds in-feeling.</p></div>
+      <div class="step"><span class="n">ii.</span><h3>Get affect context</h3><p>Receive a natural-language <code style="color:var(--gold)">emotional_context</code> block — and structured state for your own tooling.</p></div>
+      <div class="step"><span class="n">iii.</span><h3>Prepend &amp; generate</h3><p>Drop the block at the top of your prompt and, if desired, call your model as usual. The runtime does not perform that external call by default.</p></div>
     </div>
     <div class="code">
       <div class="bar"><i style="background:#e2552d"></i><i style="background:#e7b15a"></i><i style="background:#3f9389"></i><span class="t">integrate.ts</span></div>
@@ -528,9 +525,8 @@ Right now, underneath that, you also feel <b>relieved, and determined</b>.</div>
 <span class="c">// 2 · ctx.emotional_context is clean natural language</span>
 <span class="c">//    ## YOUR EMOTIONS … "underneath that, you also feel relieved, and determined."</span>
 
-<span class="c">// 3 · prepend &amp; call ANY model</span>
-<span class="k">await</span> openai.chat.completions.<span class="p">create</span>({
-  <span class="n2">model</span>: <span class="s">"gpt-4o"</span>,
+<span class="c">// 3 · optional caller-owned model call</span>
+<span class="k">await</span> callYourModel({
   <span class="n2">messages</span>: [{ <span class="n2">role</span>: <span class="s">"system"</span>, <span class="n2">content</span>: ctx.<span class="p">emotional_context</span> }, ...history]
 });</pre>
     </div>
@@ -540,8 +536,8 @@ Right now, underneath that, you also feel <b>relieved, and determined</b>.</div>
   <section id="demo">
     <div class="sec-head center reveal">
       <span class="marker" style="justify-content:center"><span class="num">04</span> Live · runs in your browser</span>
-      <h2>Watch a character feel — <span class="ital gold-text">and change its mind.</span></h2>
-      <p>Pick a relationship, say something, and watch the state shift, new feelings surface, and the exact text your model would receive update in real time.</p>
+      <h2>Inspect affect-style state — <span class="ital gold-text">and watch it update.</span></h2>
+      <p>Pick a relationship, say something, and watch the state shift, functional affect labels surface, and the exact text your optional caller-owned model integration would receive update in real time.</p>
     </div>
     <div class="demo-grid reveal d1">
       <div class="panel">
@@ -574,9 +570,9 @@ Right now, underneath that, you also feel <b>relieved, and determined</b>.</div>
   <!-- RELATIONSHIP STORY (multi-agent) -->
   <section id="story">
     <div class="sec-head center reveal">
-      <span class="marker" style="justify-content:center"><span class="num">05</span> Feelings between characters</span>
-      <h2>One secret. Three characters. <span class="ital gold-text">Emotions that travel.</span></h2>
-      <p>Limbic isn't one mood per bot — every character feels differently about every <em>other</em> character, and knowledge only spreads to those who actually learn it. Step through a falling-out and watch trust move.</p>
+      <span class="marker" style="justify-content:center"><span class="num">05</span> Directed affect between characters</span>
+      <h2>One secret. Three characters. <span class="ital gold-text">State that propagates through knowledge.</span></h2>
+      <p>Limbic is not one mood per bot — every character tracks a separate affect-style state for every <em>other</em> character, and knowledge only spreads to those who actually learn it. Step through a falling-out and watch trust move.</p>
     </div>
     <div class="story-grid reveal d1">
       <div class="stage-wrap">
@@ -612,20 +608,20 @@ Right now, underneath that, you also feel <b>relieved, and determined</b>.</div>
   <section id="usecases" class="reveal">
     <div class="sec-head center">
       <span class="marker" style="justify-content:center"><span class="num">06</span> Where it shines</span>
-      <h2>Built for anything that should <span class="ital ember-text">feel alive.</span></h2>
-      <p>If a character, companion, or agent benefits from remembering how it feels about you — Limbic fits underneath it.</p>
+      <h2>Built for characters that need <span class="ital ember-text">stateful continuity.</span></h2>
+      <p>If a character, companion, or agent benefits from persistent affect-style state about an interaction partner, Limbic fits underneath it.</p>
     </div>
     <div class="uc-grid">
       <div class="uc">
         <div class="ucIcon"><svg viewBox="0 0 24 24" fill="none" stroke="#e2552d" stroke-width="2"><path d="M6 11h4M8 9v4"/><circle cx="15" cy="11" r="1"/><circle cx="18" cy="13" r="1"/><path d="M17 5H7a5 5 0 0 0-5 5v3a5 5 0 0 0 5 5h10a5 5 0 0 0 5-5v-3a5 5 0 0 0-5-5z"/></svg></div>
         <h3>Game NPCs</h3>
-        <p>Companions that hold grudges, allies whose loyalty you earn, villains who genuinely warm or sour over a campaign.</p>
+        <p>Companions that track relationship history, allies whose loyalty you earn, villains whose stance warms or sours over a campaign.</p>
         <div class="ex">"You betrayed me at the bridge. I haven't forgotten."</div>
       </div>
       <div class="uc">
         <div class="ucIcon"><svg viewBox="0 0 24 24" fill="none" stroke="#e7b15a" stroke-width="2"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg></div>
         <h3>AI companions</h3>
-        <p>Relationships that deepen across months, not messages. Affection, playfulness and trust that actually accumulate.</p>
+        <p>Relationships that deepen across months, not messages. Affection-style signals, playfulness and trust accumulate as deterministic state.</p>
         <div class="ex">"You remembered. That… means more than you know."</div>
       </div>
       <div class="uc">
@@ -649,7 +645,7 @@ Right now, underneath that, you also feel <b>relieved, and determined</b>.</div>
       <div class="uc">
         <div class="ucIcon"><svg viewBox="0 0 24 24" fill="none" stroke="#3f9389" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
         <h3>VTubers &amp; virtual hosts</h3>
-        <p>On-stream personalities with a consistent mood arc across a session — reacting to chat with real continuity.</p>
+        <p>On-stream personalities with a consistent mood arc across a session — reacting to chat with persistent operating-state continuity.</p>
         <div class="ex">Hype builds; a troll lands; the room recovers together.</div>
       </div>
     </div>
@@ -658,10 +654,10 @@ Right now, underneath that, you also feel <b>relieved, and determined</b>.</div>
   <!-- STATS -->
   <section class="reveal" style="padding-top:0">
     <div class="stats">
-      <div class="stat"><div class="num">0ms</div><div class="lab">network calls to feel<br>runs local-first</div></div>
-      <div class="stat"><div class="num" data-count="40">40+</div><div class="lab">affect signals tracked<br>per character</div></div>
-      <div class="stat"><div class="num" data-count="100">100%</div><div class="lab">deterministic<br>same history → same feeling</div></div>
-      <div class="stat"><div class="num">∞</div><div class="lab">relationships per agent<br>each with its own history</div></div>
+      <div class="stat"><div class="num">0</div><div class="lab">default network calls<br>for affect updates</div></div>
+      <div class="stat"><div class="num">many</div><div class="lab">affect signals tracked<br>per character</div></div>
+      <div class="stat"><div class="num" data-count="100">100%</div><div class="lab">deterministic<br>same history → same state</div></div>
+      <div class="stat"><div class="num">many</div><div class="lab">relationships per agent<br>each with its own history</div></div>
     </div>
   </section>
 
@@ -672,12 +668,12 @@ Right now, underneath that, you also feel <b>relieved, and determined</b>.</div>
       <h2>Believable characters, <span class="ital gold-text">at scale.</span></h2>
     </div>
     <div class="feat-grid">
-      <div class="feat"><div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="#e2552d" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="4"/></svg></div><h3>Model-agnostic</h3><p>GPT, Claude, Llama, Mistral, your fine-tune. Limbic feeds language, not weights.</p></div>
+      <div class="feat"><div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="#e2552d" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="4"/></svg></div><h3>Model-agnostic context</h3><p>Limbic feeds language, not weights. Any external model call is optional and owned by the host application.</p></div>
       <div class="feat"><div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="#e7b15a" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><h3>Deterministic &amp; testable</h3><p>No randomness. Replay any history and get the exact same emotional state. CI-friendly.</p></div>
       <div class="feat"><div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="#3f9389" stroke-width="2"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg></div><h3>Per-relationship memory</h3><p>One agent, many bonds. It feels differently about each person it knows.</p></div>
-      <div class="feat"><div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="#e7b15a" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><h3>Feelings that linger</h3><p>Allostatic prediction &amp; temporal attention carry pressure across turns — moods don't snap.</p></div>
+      <div class="feat"><div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="#e7b15a" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><h3>Affect-style state that persists</h3><p>Allostatic prediction &amp; temporal attention carry pressure across turns — state does not reset every message.</p></div>
       <div class="feat"><div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="#e2552d" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 9h6v6H9z"/></svg></div><h3>Inspectable state</h3><p>Full structured output for dashboards, analytics and balancing — separate from the prompt.</p></div>
-      <div class="feat"><div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="#3f9389" stroke-width="2"><path d="M4 4h16v12H5.2L4 17.2z"/></svg></div><h3>Drop-in middleware</h3><p>Sits beside your stack. No retraining, no migration, no lock-in. Ship in an afternoon.</p></div>
+      <div class="feat"><div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="#3f9389" stroke-width="2"><path d="M4 4h16v12H5.2L4 17.2z"/></svg></div><h3>Drop-in middleware</h3><p>Sits beside your stack. No retraining, no migration, no lock-in. Integration time depends on your host app and model provider.</p></div>
     </div>
   </section>
 
@@ -699,7 +695,7 @@ Right now, underneath that, you also feel <b>relieved, and determined</b>.</div>
           <li><span class="c">+</span> Community support</li>
           <li><span class="c">+</span> Generous beta access</li>
         </ul>
-        <a href="#waitlist" class="btn btn-ghost">Contact sales</a>
+        <a href="#beta" class="btn btn-ghost">View beta notes</a>
       </div>
       <div class="plan feat-plan">
         <div class="pn">Studio</div>
@@ -711,7 +707,7 @@ Right now, underneath that, you also feel <b>relieved, and determined</b>.</div>
           <li><span class="c">+</span> Custom persona profiles</li>
           <li><span class="c">+</span> Priority support</li>
         </ul>
-        <a href="#waitlist" class="btn btn-primary">Contact sales</a>
+        <a href="#beta" class="btn btn-primary">View beta notes</a>
       </div>
       <div class="plan">
         <div class="pn">Enterprise</div>
@@ -723,34 +719,22 @@ Right now, underneath that, you also feel <b>relieved, and determined</b>.</div>
           <li><span class="c">+</span> Dedicated tuning support</li>
           <li><span class="c">+</span> Custom integrations</li>
         </ul>
-        <a href="#waitlist" class="btn btn-ghost">Contact sales</a>
+        <a href="#beta" class="btn btn-ghost">View beta notes</a>
       </div>
     </div>
   </section>
 
-  <!-- WAITLIST -->
-  <section id="waitlist" class="reveal">
+  <!-- BETA CTA -->
+  <section id="beta" class="reveal">
     <div class="wl-card">
       <span class="marker" style="justify-content:center"><span class="num">09</span> Limited beta</span>
-      <h2>Be first when <span class="ember-text">Limbic</span> drops.</h2>
-      <p class="muted" style="margin-top:16px;max-width:46ch;margin-inline:auto">Launch-day access, priority onboarding, and a say in the roadmap. We email when your slot opens.</p>
-      <form class="signup" id="signup" novalidate data-endpoint="">
-        <input id="email" type="email" name="email" autocomplete="email" placeholder="you@studio.com" required aria-label="Email" />
-        <select id="role" name="role" aria-label="What are you building">
-          <option value="game">I'm building a game</option>
-          <option value="companion">An AI companion</option>
-          <option value="fiction">Interactive fiction</option>
-          <option value="agent">Agents / assistants</option>
-          <option value="other">Something else</option>
-        </select>
-        <button type="submit" class="btn btn-primary">Join the waitlist</button>
-      </form>
-      <p class="signup-note">No spam, no card. Just one email when the beta opens.</p>
-      <div class="success" id="success">
-        <div class="check"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1a0f09" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></div>
-        <h2 style="font-size:26px">You're on the list.</h2>
-        <p style="margin-top:8px" class="muted">You're <span class="count" id="position">#1,287</span> in line. We'll email <span id="confEmail" style="color:var(--text)"></span> the moment the beta opens.</p>
+      <h2>Explore the <span class="ember-text">Limbic</span> reference demo.</h2>
+      <p class="muted" style="margin-top:16px;max-width:52ch;margin-inline:auto">This public page is a static, self-contained artifact. It does not collect personal data, store signups, or send browser data to a backend.</p>
+      <div class="signup" aria-label="Demo actions">
+        <a href="#demo" class="btn btn-primary">Try the browser demo</a>
+        <a href="#how" class="btn btn-ghost">Read integration notes</a>
       </div>
+      <p class="signup-note">No form, no tracking endpoint, no local signup storage.</p>
     </div>
   </section>
 
@@ -761,12 +745,12 @@ Right now, underneath that, you also feel <b>relieved, and determined</b>.</div>
       <h2>Good questions.</h2>
     </div>
     <div class="faq">
-      <details class="qa"><summary>Does this replace my LLM? <span class="pl"></span></summary><div class="a">No. Limbic sits beside it. You keep your model and prompts; Limbic supplies a natural-language emotional context block you prepend. It works with any model that takes a system message.</div></details>
-      <details class="qa"><summary>Is it deterministic? <span class="pl"></span></summary><div class="a">Yes. Given the same character profile and event history, Limbic produces the exact same affective state and the exact same injected text. No randomness, no wall-clock, no hidden network — so you can unit-test feelings in CI.</div></details>
-      <details class="qa"><summary>What does the model actually receive? <span class="pl"></span></summary><div class="a">Only natural language — a short <code>## YOUR EMOTIONS</code> briefing. No raw numbers, policy fields, or JSON ever reach the prompt. All structured state stays server-side for your dashboards and balancing.</div></details>
-      <details class="qa"><summary>Can one character feel differently about different people? <span class="pl"></span></summary><div class="a">Absolutely — that's core. Each agent holds a separate relationship state per actor. The same line from a soulmate and from a stranger lands completely differently.</div></details>
+      <details class="qa"><summary>Does this replace my LLM? <span class="pl"></span></summary><div class="a">No. Limbic sits beside it. You keep your model and prompts; Limbic supplies a natural-language emotional context block you can prepend. External model calls are optional caller-owned integrations.</div></details>
+      <details class="qa"><summary>Is it deterministic? <span class="pl"></span></summary><div class="a">Yes. Given the same character profile and event history, Limbic produces the same affective state and rendered context. No randomness, no wall-clock, no hidden network for affect updates — so you can unit-test state in CI.</div></details>
+      <details class="qa"><summary>What does the model actually receive? <span class="pl"></span></summary><div class="a">The default integration injects only natural-language <code>emotional_context</code>. Structured state is available for dashboards and balancing, but callers should avoid adding raw scores, policy fields, JSON, or debug fields to player-facing prompts.</div></details>
+      <details class="qa"><summary>Can one character track different relationships? <span class="pl"></span></summary><div class="a">Yes — that's core. Each agent can hold a separate relationship state per actor. The same line from a close ally and from a stranger updates deterministic state differently.</div></details>
       <details class="qa"><summary>Are these "real" emotions? <span class="pl"></span></summary><div class="a">They're <em>functional</em> affect: deterministic operating-state signals that persist, compete, and shape behavior over time. Designed to make characters believable — not a claim of consciousness, sentience, or subjective experience.</div></details>
-      <details class="qa"><summary>How fast can I integrate? <span class="pl"></span></summary><div class="a">An afternoon. One call to get the emotional context, prepend it, generate. The live demo above is the real appraisal-and-render logic running in your browser.</div></details>
+      <details class="qa"><summary>How fast can I integrate? <span class="pl"></span></summary><div class="a">The minimal loop is small: get the emotional context, prepend it, and generate with your own model if desired. Real integration time depends on your host app, storage, safety review, and provider setup. The demo above mirrors appraisal-and-render logic in the browser without collecting data.</div></details>
     </div>
   </section>
 </main>
@@ -776,15 +760,15 @@ Right now, underneath that, you also feel <b>relieved, and determined</b>.</div>
     <div class="foot-top">
       <div style="max-width:300px">
         <div class="logo" style="margin-bottom:14px"><span class="mark"><svg viewBox="0 0 32 32" fill="none"><path d="M3 17h6l3-8 4 14 3-9 2 3h8" stroke="#e2552d" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/></svg></span> Limbic</div>
-        <p class="muted" style="font-size:14px">The affect runtime for AI characters. Give them a memory of how they feel about you.</p>
+        <p class="muted" style="font-size:14px">The affect runtime for AI characters. Give them persistent functional affect continuity.</p>
       </div>
       <div class="foot-cols">
         <div class="foot-col"><h4>Product</h4><a href="#engine">Affect engine</a><a href="#demo">Live demo</a><a href="#usecases">Use cases</a><a href="#pricing">Pricing</a></div>
-        <div class="foot-col"><h4>Developers</h4><a href="#how">Quickstart</a><a href="#faq">FAQ</a><a href="#waitlist">API access</a></div>
-        <div class="foot-col"><h4>Company</h4><a href="#waitlist">Waitlist</a><a href="#top">Back to top</a></div>
+        <div class="foot-col"><h4>Developers</h4><a href="#how">Quickstart</a><a href="#faq">FAQ</a><a href="#beta">API access</a></div>
+        <div class="foot-col"><h4>Company</h4><a href="#beta">Beta notes</a><a href="#top">Back to top</a></div>
       </div>
     </div>
-    <p class="disclaim">Limbic models functional, operating-state affect for interactive characters: deterministic signals that shape behavior, memory, and relationships over time. It is designed for believable characters and is not a claim of consciousness, sentience, or subjective experience. © <span id="year"></span> Limbic. Built for the people making the most alive games and companions.</p>
+    <p class="disclaim">Limbic models functional, operating-state affect for interactive characters: deterministic signals that shape behavior, memory, and relationships over time. It is designed for believable characters and is not a claim of consciousness, sentience, or subjective experience. © <span id="year"></span> Limbic. Built for teams researching stateful characters and companions.</p>
   </div>
 </footer>
 
@@ -934,24 +918,6 @@ Right now, underneath that, you also feel <b>relieved, and determined</b>.</div>
   $("msg").addEventListener("keydown",function(e){ if(e.key==="Enter"){ pushMsg(this.value); this.value=""; } });
   $("rawToggle").addEventListener("click",function(){ this.classList.toggle("on"); $("raw").classList.toggle("show"); });
   setPreset("bonded");
-
-  /* ---------- waitlist ---------- */
-  var BASE=1286;
-  function getCount(){ try{return parseInt(localStorage.getItem("limbic_wl")||"0",10)||0;}catch(e){return 0;} }
-  var form=$("signup");
-  form.addEventListener("submit",function(e){
-    e.preventDefault();
-    var email=$("email").value.trim();
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ $("email").focus(); $("email").style.borderColor="#ff6b6b"; return; }
-    var endpoint=form.getAttribute("data-endpoint");
-    try{ var n=getCount()+1; localStorage.setItem("limbic_wl",String(n)); localStorage.setItem("limbic_email",email); }catch(_){}
-    if(endpoint){ try{ fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email,role:$("role").value})}); }catch(_){} }
-    $("position").textContent="#"+(BASE+getCount()).toLocaleString();
-    $("confEmail").textContent=email;
-    form.style.display="none"; document.querySelector(".signup-note").style.display="none";
-    $("success").classList.add("show");
-  });
-  $("email").addEventListener("input",function(){ this.style.borderColor=""; });
 
   /* ---------- reveal + progress ---------- */
   $("year").textContent=new Date().getFullYear();
@@ -1124,7 +1090,7 @@ Right now, underneath that, you also feel <b>relieved, and determined</b>.</div>
       rect.setAttribute("rx",5); rect.setAttribute("fill","#1d1510"); rect.setAttribute("stroke","rgba(244,236,221,.18)");
       var t=document.createElementNS(NS,"text");
       t.setAttribute("x",g.mx); t.setAttribute("y",g.my+3); t.setAttribute("text-anchor","middle");
-      t.setAttribute("font-family","'JetBrains Mono',monospace"); t.setAttribute("font-size","10.5"); t.setAttribute("font-weight","500");
+      t.setAttribute("font-family","ui-monospace,SFMono-Regular,Menlo,Consolas,monospace"); t.setAttribute("font-size","10.5"); t.setAttribute("font-weight","500");
       lg.appendChild(rect); lg.appendChild(t); eEdges.appendChild(lg); labels[key]={g:lg,t:t};
     });
     // nodes
